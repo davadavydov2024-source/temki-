@@ -8,58 +8,65 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Хранилище настроек
-config = {
-    "token": "YOUR_TOKEN",
-    "welcome": "Привет! Я бот Easy Downloader. Пришли ссылку!",
-    "channels": [] # Список до 10 каналов
+# Текущие настройки проекта
+state = {
+    "token": "ТВОЙ_ТОКЕН_ИЗ_BOTFATHER",
+    "welcome": "Добро пожаловать в Easy Downloader! Пришли ссылку.",
+    "channels": [] # Сюда прилетят до 10 каналов из админки
 }
 
-bot = telebot.TeleBot(config["token"])
+bot = telebot.TeleBot(state["token"])
+
+# Функция проверки подписки на все указанные каналы
+def check_subscriptions(user_id):
+    if not state["channels"]: return True
+    for ch in state["channels"]:
+        try:
+            member = bot.get_chat_member(ch, user_id)
+            if member.status == 'left': return False
+        except: continue 
+    return True
 
 @app.route('/api/download', methods=['POST'])
-def download():
-    url = request.json.get('url')
+def handle_dl():
+    target_url = request.json.get('url')
+    # Настройки yt-dlp для чистого скачивания без в.з.
+    opts = {'format': 'best', 'quiet': True, 'noplaylist': True}
     try:
-        with yt_dlp.YoutubeDL({'format': 'best', 'quiet': True}) as ydl:
-            info = ydl.extract_info(url, download=False)
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(target_url, download=False)
             return jsonify({"success": True, "link": info['url']})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/admin', methods=['POST'])
-def admin_update():
-    global config, bot
+def handle_admin():
+    global state, bot
     data = request.json
-    config["token"] = data.get("token", config["token"])
-    config["welcome"] = data.get("welcome", config["welcome"])
-    config["channels"] = data.get("channels", [])
-    
-    # Переподключаем бота, если токен новый
-    bot = telebot.TeleBot(config["token"])
-    return jsonify({"status": "updated"})
+    if data.get("token"):
+        state["token"] = data["token"]
+        bot = telebot.TeleBot(state["token"]) # Пересоздаем бота с новым токеном
+    state["welcome"] = data.get("welcome", state["welcome"])
+    state["channels"] = data.get("channels", [])
+    return jsonify({"status": "success"})
 
-# Логика бота с проверкой подписки на все 10 каналов
-def check_sub(user_id):
-    for channel in config["channels"]:
-        try:
-            status = bot.get_chat_member(channel, user_id).status
-            if status == 'left': return False
-        except: continue
-    return True
-
+# Логика Telegram бота
 @bot.message_handler(commands=['start'])
-def welcome(message):
-    if not check_sub(message.from_user.id):
-        channels_str = "\n".join(config["channels"])
-        bot.send_message(message.chat.id, f"❌ Подпишись на каналы, чтобы пользоваться ботом:\n{channels_str}")
+def bot_start(message):
+    if check_subscriptions(message.from_user.id):
+        bot.send_message(message.chat.id, state["welcome"])
     else:
-        bot.send_message(message.chat.id, config["welcome"])
+        msg = "❌ Ошибка доступа! Сначала подпишись на наши каналы:\n\n"
+        for ch in state["channels"]:
+            msg += f"🔗 {ch}\n"
+        bot.send_message(message.chat.id, msg)
 
-def start_bot():
+def run_bot_polling():
+    print("Бот Urban Clash запущен...")
     bot.polling(none_stop=True)
 
 if __name__ == '__main__':
-    threading.Thread(target=start_bot, daemon=True).start()
+    # Запуск бота в отдельном потоке, чтобы Flask не блокировался
+    threading.Thread(target=run_bot_polling, daemon=True).start()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
