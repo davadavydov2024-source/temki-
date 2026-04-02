@@ -7,62 +7,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2fe; --neon-pink: #ff007f; --bg: #050505; }
-        body { background-color: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         
-        /* Главный экран */
-        .main-ui { width: 100%; max-width: 450px; padding: 50px 20px; text-align: center; transition: 0.5s; }
-        .glass-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px 20px; backdrop-filter: blur(15px); box-shadow: 0 0 30px rgba(0, 242, 254, 0.1); }
+        .main-container { width: 100%; max-width: 400px; padding: 40px 20px; text-align: center; transition: 0.5s; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px; padding: 35px 25px; backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0, 242, 254, 0.1); }
         
-        h1 { font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(45deg, var(--neon), var(--neon-pink)); -webkit-background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(0,242,254,0.5)); }
+        h1 { font-size: 2.2rem; background: linear-gradient(45deg, var(--neon), var(--neon-pink)); -webkit-background-clip: text; color: transparent; margin-bottom: 10px; }
+        p.subtitle { color: #666; font-size: 0.9rem; margin-bottom: 25px; }
         
-        input { width: 100%; padding: 16px; background: #111; border: 2px solid #222; border-radius: 12px; color: #fff; font-size: 1rem; margin: 20px 0; transition: 0.3s; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1.5px solid #222; border-radius: 12px; color: #fff; box-sizing: border-box; transition: 0.3s; }
         input:focus { border-color: var(--neon); outline: none; box-shadow: 0 0 15px var(--neon); }
         
-        .download-btn { background: linear-gradient(45deg, var(--neon), #4facfe); color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
-        
-        /* Секретное сердечко */
-        .secret-heart { font-size: 2rem; color: var(--neon-pink); cursor: pointer; margin-top: 30px; transition: 0.3s; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 20px var(--neon-pink); } 100% { transform: scale(1); opacity: 0.8; } }
+        .btn { background: linear-gradient(45deg, var(--neon), #4facfe); color: #000; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+        .btn:active { transform: scale(0.98); }
 
-        /* Админка (скрыта) */
-        .admin-panel { display: none; width: 90%; max-width: 600px; padding: 30px; background: #0a0a0a; border: 2px solid var(--neon); border-radius: 20px; margin: 20px 0; }
-        .channel-input { display: flex; gap: 10px; margin-bottom: 8px; }
+        .heart-trigger { font-size: 2.2rem; color: var(--neon-pink); cursor: pointer; margin-top: 30px; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 20px var(--neon-pink); } }
+
+        #adminView { display: none; width: 90%; max-width: 500px; padding: 20px; animation: slideIn 0.5s ease-out; }
+        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        .footer { margin-top: auto; padding: 25px; font-size: 0.8rem; color: #444; letter-spacing: 1px; }
+        .channel-slot { display: flex; gap: 8px; margin-bottom: 5px; }
+        label { font-size: 0.8rem; color: var(--neon); margin-top: 15px; display: block; font-weight: bold; }
+        
+        .footer { margin-top: auto; padding: 25px; font-size: 0.75rem; color: #444; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="main-ui" id="mainView">
-        <div class="glass-box">
-            <h1>Easy Downloader</h1>
-            <p style="color: #666;">TikTok • Shorts • Pinterest • Likee</p>
-            <input type="text" id="videoUrl" placeholder="Вставь ссылку...">
-            <button class="download-btn" onclick="processDownload()">Скачать видео</button>
+    <div class="main-container" id="mainView">
+        <div class="glass-card">
+            <h1>Urban Clash</h1>
+            <p class="subtitle">Скачивай видео без водяных знаков</p>
+            <input type="text" id="videoUrl" placeholder="Вставьте ссылку здесь...">
+            <button class="btn" id="dlBtn" onclick="startDownload()">Скачать сейчас</button>
             
-            <div class="secret-heart" onclick="heartClick()">
+            <div class="heart-trigger" onclick="handleHeart()">
                 <i class="fa-solid fa-heart"></i>
             </div>
         </div>
     </div>
 
-    <div class="admin-panel" id="adminView">
-        <h2 style="color: var(--neon); text-align: center;">🛡 Admin Console</h2>
-        
-        <div style="margin-top: 20px;">
-            <label>🤖 Токен бота:</label>
-            <input type="text" id="token" placeholder="API Token from BotFather">
+    <div id="adminView">
+        <div class="glass-card" style="text-align: left;">
+            <h2 style="color: var(--neon); text-align: center; margin-top: 0;">🛡 Admin Panel</h2>
             
-            <label>📢 Обязательные каналы (до 10):</label>
-            <div id="channelsContainer">
-                <input type="text" class="chan-link" placeholder="@channel1">
+            <label>API Токен бота:</label>
+            <input type="text" id="botToken" placeholder="12345:AAAbbbccc...">
+            
+            <label>Приветствие в боте:</label>
+            <textarea id="welcomeMsg" rows="2" placeholder="Привет! Я бот..."></textarea>
+            
+            <label>Каналы подписки (до 10):</label>
+            <div id="chanContainer">
+                <input type="text" class="chan-input" placeholder="@channel_one">
             </div>
-            <button onclick="addChannelInput()" style="background:#222; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">+ Добавить канал</button>
+            <button onclick="addInput()" style="background:none; border:1px dashed #444; color:#666; width:100%; padding:5px; border-radius:8px; cursor:pointer;">+ добавить канал</button>
             
-            <label style="display:block; margin-top:20px;">📝 Приветствие:</label>
-            <textarea id="welcome" style="width:100%; background:#111; color:#fff; border:1px solid #333; border-radius:10px; padding:10px;" rows="3"></textarea>
-            
-            <button class="download-btn" style="margin-top:20px;" onclick="saveAdmin()">Сохранить настройки</button>
+            <button class="btn" style="margin-top: 25px;" onclick="updateAdmin()">Сохранить настройки</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#444; width:100%; margin-top:10px; cursor:pointer;">Закрыть</button>
         </div>
     </div>
 
@@ -71,69 +74,67 @@
     </div>
 
     <script>
-        let clicks = 0;
-        const SERVER_URL = 'https://твой-сервер.onrender.com';
+        let heartClicks = 0;
+        const API_URL = "https://temki-jgp0.onrender.com"; // Твой бэкенд
 
-        // Пасхалка
-        function heartClick() {
-            clicks++;
-            if (clicks === 15) {
-                const pass = prompt("Введите код доступа:");
-                if (pass === "250515") {
+        function handleHeart() {
+            heartClicks++;
+            if(heartClicks === 15) {
+                if(prompt("Введите код доступа:") === "250515") {
                     document.getElementById('mainView').style.display = 'none';
                     document.getElementById('adminView').style.display = 'block';
-                } else {
-                    alert("Неверный пароль!");
-                    clicks = 0;
                 }
+                heartClicks = 0;
             }
         }
 
-        function addChannelInput() {
-            const container = document.getElementById('channelsContainer');
-            if (container.getElementsByTagName('input').length < 10) {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'chan-link';
-                input.placeholder = '@channel' + (container.getElementsByTagName('input').length + 1);
-                container.appendChild(input);
-            } else {
-                alert("Максимум 10 каналов!");
+        function addInput() {
+            const cont = document.getElementById('chanContainer');
+            if(cont.children.length < 10) {
+                const inp = document.createElement('input');
+                inp.className = "chan-input";
+                inp.placeholder = "@channel_" + (cont.children.length + 1);
+                cont.appendChild(inp);
             }
         }
 
-        async function saveAdmin() {
-            const channels = Array.from(document.querySelectorAll('.chan-link')).map(i => i.value).filter(v => v);
+        async function updateAdmin() {
+            const channels = Array.from(document.querySelectorAll('.chan-input')).map(i => i.value).filter(v => v);
             const data = {
-                token: document.getElementById('token').value,
-                welcome: document.getElementById('welcome').value,
+                token: document.getElementById('botToken').value,
+                welcome: document.getElementById('welcomeMsg').value,
                 channels: channels
             };
-            
-            await fetch(`${SERVER_URL}/api/admin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            alert("Настройки обновлены!");
+            try {
+                const res = await fetch(`${API_URL}/api/admin`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                if(res.ok) alert("Настройки Urban Clash обновлены!");
+            } catch(e) { alert("Ошибка связи с сервером!"); }
         }
 
-        async function processDownload() {
+        async function startDownload() {
             const url = document.getElementById('videoUrl').value;
+            const btn = document.getElementById('dlBtn');
             if(!url) return;
-            const btn = document.querySelector('.download-btn');
-            btn.innerText = "ЗАГРУЗКА...";
             
+            btn.innerText = "ОБРАБОТКА...";
             try {
-                const res = await fetch(`${SERVER_URL}/api/download`, {
+                const res = await fetch(`${API_URL}/api/download`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({url})
                 });
-                const result = await res.json();
-                if(result.success) window.open(result.link, '_blank');
-            } catch(e) { alert("Ошибка сервера!"); }
-            btn.innerText = "Скачать видео";
+                const data = await res.json();
+                if(data.success) {
+                    window.open(data.link, '_blank');
+                } else {
+                    alert("Ошибка: " + data.error);
+                }
+            } catch(e) { alert("Сервер Render еще просыпается, подожди 30 сек и нажми еще раз."); }
+            btn.innerText = "Скачать сейчас";
         }
     </script>
 </body>
