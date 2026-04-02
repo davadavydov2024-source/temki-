@@ -1,4 +1,5 @@
 import telebot
+from telebot import types
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import yt_dlp
@@ -8,65 +9,86 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Текущие настройки проекта
-state = {
-    "token": "ТВОЙ_ТОКЕН_ИЗ_BOTFATHER",
-    "welcome": "Добро пожаловать в Easy Downloader! Пришли ссылку.",
-    "channels": [] # Сюда прилетят до 10 каналов из админки
+# ТВОЙ ТОКЕН УЖЕ ЗДЕСЬ
+TOKEN = "8685483938:AAHCYckrpVxFOfjGbnq0W1g3FmpA0ct8jJI"
+bot = telebot.TeleBot(TOKEN)
+
+# Настройки и база данных пользователей (в памяти)
+config = {
+    "welcome": "Привет! Я бот Urban Clash. Пришли ссылку на видео, и я скачаю его без водяных знаков! 🚀",
+    "users": set() 
 }
 
-bot = telebot.TeleBot(state["token"])
+# --- ЛОГИКА СКАЧИВАНИЯ ---
+def download_video(url):
+    ydl_opts = {
+        'format': 'best',
+        'noplaylist': True,
+        'quiet': True,
+        'outtmpl': 'video.mp4',
+        'no_warnings': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.extract_info(url, download=True)
+        return 'video.mp4'
 
-# Функция проверки подписки на все указанные каналы
-def check_subscriptions(user_id):
-    if not state["channels"]: return True
-    for ch in state["channels"]:
-        try:
-            member = bot.get_chat_member(ch, user_id)
-            if member.status == 'left': return False
-        except: continue 
-    return True
-
-@app.route('/api/download', methods=['POST'])
-def handle_dl():
-    target_url = request.json.get('url')
-    # Настройки yt-dlp для чистого скачивания без в.з.
-    opts = {'format': 'best', 'quiet': True, 'noplaylist': True}
-    try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(target_url, download=False)
-            return jsonify({"success": True, "link": info['url']})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/admin', methods=['POST'])
-def handle_admin():
-    global state, bot
-    data = request.json
-    if data.get("token"):
-        state["token"] = data["token"]
-        bot = telebot.TeleBot(state["token"]) # Пересоздаем бота с новым токеном
-    state["welcome"] = data.get("welcome", state["welcome"])
-    state["channels"] = data.get("channels", [])
-    return jsonify({"status": "success"})
-
-# Логика Telegram бота
+# --- БОТ ---
 @bot.message_handler(commands=['start'])
-def bot_start(message):
-    if check_subscriptions(message.from_user.id):
-        bot.send_message(message.chat.id, state["welcome"])
-    else:
-        msg = "❌ Ошибка доступа! Сначала подпишись на наши каналы:\n\n"
-        for ch in state["channels"]:
-            msg += f"🔗 {ch}\n"
-        bot.send_message(message.chat.id, msg)
+def start(message):
+    config["users"].add(message.chat.id)
+    bot.send_message(message.chat.id, config["welcome"])
 
-def run_bot_polling():
-    print("Бот Urban Clash запущен...")
+@bot.message_handler(func=lambda m: True)
+def handle_link(message):
+    url = message.text
+    if "tiktok.com" in url or "youtu" in url or "pin.it" in url:
+        msg = bot.send_message(message.chat.id, "⏳ Начинаю загрузку без водяных знаков...")
+        try:
+            file_path = download_video(url)
+            with open(file_path, 'rb') as v:
+                bot.send_video(message.chat.id, v)
+            os.remove(file_path)
+            bot.delete_message(message.chat.id, msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f"❌ Ошибка загрузки. Проверь ссылку.", message.chat.id, msg.message_id)
+
+# --- АДМИНКА (API для рассылки) ---
+@app.route('/api/admin/promo', methods=['POST'])
+def send_promo():
+    data = request.json
+    text = data.get('text')
+    photo_url = data.get('photo')
+    sticker_id = data.get('sticker') # ID премиум или обычного стикера
+    buttons_raw = data.get('buttons', [])
+    
+    markup = types.InlineKeyboardMarkup()
+    for b in buttons_raw:
+        if "|" in b:
+            name, link = b.split("|")
+            markup.add(types.InlineKeyboardButton(text=name.strip(), url=link.strip()))
+
+    count = 0
+    for user_id in list(config["users"]):
+        try:
+            # 1. Сначала шлем стикер, если он есть
+            if sticker_id:
+                bot.send_sticker(user_id, sticker_id)
+            
+            # 2. Потом фото с текстом или просто текст
+            if photo_url:
+                bot.send_photo(user_id, photo_url, caption=text, reply_markup=markup, parse_mode="HTML")
+            else:
+                bot.send_message(user_id, text, reply_markup=markup, parse_mode="HTML")
+            count += 1
+        except: continue
+    
+    return jsonify({"success": True, "sent": count})
+
+def run_bot():
+    print("Бот Urban Clash запущен!")
     bot.polling(none_stop=True)
 
 if __name__ == '__main__':
-    # Запуск бота в отдельном потоке, чтобы Flask не блокировался
-    threading.Thread(target=run_bot_polling, daemon=True).start()
+    threading.Thread(target=run_bot, daemon=True).start()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
