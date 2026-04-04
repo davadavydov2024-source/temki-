@@ -10,12 +10,15 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, URLInputFile
 from aiohttp import web
 
-# --- КОНФИГУРАЦИЯ ---
+# --- НАСТРОЙКИ ---
+# Берем токен из Environment Variables на Render
 API_TOKEN = os.getenv('BOT_TOKEN')
-RENDER_EXTERNAL_URL = "https://temki-jgp0.onrender.com" 
-ADMIN_ID = 7040863301  # Твой личный ID для доступа к админке
+# Твой актуальный адрес со скриншота для самопинга
+RENDER_EXTERNAL_URL = "https://temki-1.onrender.com" 
+# Твой ID для админки
+ADMIN_ID = 7040863301
 
-# Хранилище настроек (сбрасывается при перезагрузке сервера)
+# Временное хранилище (сбросится при перезапуске)
 data_store = {
     "greeting": (
         "<b>Привет! Я бот для скачивания медиа.</b> 📥\n\n"
@@ -23,7 +26,7 @@ data_store = {
         "• <b>TikTok</b>\n"
         "• <b>Pinterest</b>\n"
         "• <b>Likee</b>\n\n"
-        "<i>Просто вставь ссылку в чат, и я пришлю тебе файл!</i>"
+        "<i>Просто пришли ссылку, и я отправлю видео файлом!</i>"
     ),
     "users": set()
 }
@@ -32,37 +35,46 @@ class AdminStates(StatesGroup):
     waiting_for_ad_text = State()
     waiting_for_new_greeting = State()
 
-bot = Bot(token=API_TOKEN, parse_mode="HTML")
-dp = Dispatcher()
+# Инициализация логов
 logging.basicConfig(level=logging.INFO)
 
-# --- ФУНКЦИЯ СКАЧИВАНИЯ ---
+# Проверка токена перед запуском
+if not API_TOKEN:
+    logging.error("ОШИБКА: Токен BOT_TOKEN не найден в настройках Environment!")
+    exit(1)
+
+bot = Bot(token=API_TOKEN, parse_mode="HTML")
+dp = Dispatcher()
+
+# --- СКАЧИВАНИЕ (yt-dlp) ---
 def download_video(url):
     ydl_opts = {
         'format': 'best',
         'quiet': True,
         'no_warnings': True,
+        'cachedir': False,
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             return info.get('url')
     except Exception as e:
-        logging.error(f"Download error: {e}")
+        logging.error(f"Ошибка загрузки: {e}")
         return None
 
-# --- ВЕБ-СЕРВЕР И САМОПИНГ (ДЛЯ RENDER) ---
+# --- ВЕБ-СЕРВЕР И САМОПИНГ ---
 async def handle(request):
-    return web.Response(text="Urban Clash is active!")
+    return web.Response(text="Urban Clash is Alive!")
 
 async def self_ping():
-    await asyncio.sleep(10)
+    await asyncio.sleep(20) # Даем боту время запуститься
     while True:
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(RENDER_EXTERNAL_URL) as response:
-                    logging.info(f"Self-ping status: {response.status}")
-        except: pass
+                async with session.get(RENDER_EXTERNAL_URL) as resp:
+                    logging.info(f"Self-ping OK: {resp.status}")
+        except Exception as e:
+            logging.error(f"Self-ping failed: {e}")
         await asyncio.sleep(300) # 5 минут
 
 async def start_web_server():
@@ -74,24 +86,20 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-# --- ОБРАБОТКА ССЫЛОК ---
+# --- ХЕНДЛЕРЫ ---
 @dp.message(F.text.regexp(r'(tiktok\.com|pinterest\.com|pin\.it|likee\.video)'))
 async def handle_video_link(message: types.Message):
     wait_msg = await message.answer("⏳ <b>Обрабатываю ссылку...</b>")
-    
     video_url = download_video(message.text)
     
     if video_url:
         try:
-            video_file = URLInputFile(video_url)
-            await message.answer_video(video_file, caption="✅ <b>Готово!</b>")
+            await message.answer_video(URLInputFile(video_url), caption="✅ <b>Готово!</b>")
             await wait_msg.delete()
-        except Exception as e:
-            await wait_msg.edit_text("❌ Ошибка при отправке видео.")
+        except:
+            await wait_msg.edit_text("❌ Ошибка при отправке файла.")
     else:
-        await wait_msg.edit_text("❌ Не удалось получить видео. Возможно, ссылка неверна.")
-
-# --- АДМИНКА ---
+        await wait_msg.edit_text("❌ Не удалось получить видео.")
 
 @dp.message(Command("start"))
 async def start_cmd(message: types.Message):
@@ -100,45 +108,27 @@ async def start_cmd(message: types.Message):
 
 @dp.message(Command("adminARTEMK101"))
 async def admin_panel(message: types.Message):
-    # ПРОВЕРКА АЙДИ
     if message.from_user.id != ADMIN_ID:
-        await message.answer("⚠️ Доступ запрещен. Вы не являетесь администратором.")
-        return
-
-    buttons = [
-        [InlineKeyboardButton(text="📢 Реклама", callback_data="admin_broadcast")],
-        [InlineKeyboardButton(text="👋 Изменить приветствие", callback_data="admin_change_greet")]
-    ]
-    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await message.answer("🛠 <b>Админ-панель проекта</b>\n\nДоступ разрешен для ID: <code>7040863301</code>", reply_markup=kb)
+        return # Просто игнорим чужих
+    
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📢 Рассылка", callback_data="admin_broadcast")],
+        [InlineKeyboardButton(text="👋 Смена приветствия", callback_data="admin_change_greet")]
+    ])
+    await message.answer("🛠 <b>Админка</b>", reply_markup=kb)
 
 @dp.callback_query(F.data == "admin_broadcast")
 async def start_broadcast(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("Введите текст рекламы для рассылки:")
+    await callback.message.answer("Текст рассылки:")
     await state.set_state(AdminStates.waiting_for_ad_text)
-    await callback.answer()
-
-@dp.callback_query(F.data == "admin_change_greet")
-async def start_change_greet(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("Введите новое приветствие (можно HTML):")
-    await state.set_state(AdminStates.waiting_for_new_greeting)
     await callback.answer()
 
 @dp.message(AdminStates.waiting_for_ad_text)
 async def process_broadcast(message: types.Message, state: FSMContext):
-    sent_count = 0
     for u_id in data_store["users"]:
-        try:
-            await bot.send_message(u_id, message.text)
-            sent_count += 1
+        try: await bot.send_message(u_id, message.text)
         except: pass
-    await message.answer(f"✅ Рассылка завершена! Получателей: {sent_count}")
-    await state.clear()
-
-@dp.message(AdminStates.waiting_for_new_greeting)
-async def process_new_greeting(message: types.Message, state: FSMContext):
-    data_store["greeting"] = message.text
-    await message.answer("✅ Новое приветствие сохранено!")
+    await message.answer("✅ Отправлено!")
     await state.clear()
 
 # --- ЗАПУСК ---
@@ -148,7 +138,4 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except:
-        pass
+    asyncio.run(main())
