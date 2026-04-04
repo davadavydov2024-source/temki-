@@ -1,94 +1,143 @@
-import telebot
-from telebot import types
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import yt_dlp
-import threading
+import logging
+import asyncio
 import os
+import aiohttp
+import yt_dlp
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, URLInputFile
+from aiohttp import web
 
-app = Flask(__name__)
-CORS(app)
+# --- КОНФИГУРАЦИЯ ---
+API_TOKEN = os.getenv('BOT_TOKEN')
+RENDER_EXTERNAL_URL = "https://temki-jgp0.onrender.com" 
 
-# ТВОЙ ТОКЕН УЖЕ ЗДЕСЬ
-TOKEN = "8685483938:AAHCYckrpVxFOfjGbnq0W1g3FmpA0ct8jJI"
-bot = telebot.TeleBot(TOKEN)
-
-# Настройки и база данных пользователей (в памяти)
-config = {
-    "welcome": "Привет! Я бот Urban Clash. Пришли ссылку на видео, и я скачаю его без водяных знаков! 🚀",
-    "users": set() 
+# Хранилище настроек (в идеале использовать БД)
+data_store = {
+    "greeting": (
+        "<b>Привет! Я бот для скачивания медиа.</b> 📥\n\n"
+        "Отправь мне ссылку на видео из:\n"
+        "• <b>TikTok</b>\n"
+        "• <b>Pinterest</b>\n"
+        "• <b>Likee</b>\n\n"
+        "<i>Просто вставь ссылку в чат, и я пришлю тебе файл!</i>"
+    ),
+    "users": set()
 }
 
-# --- ЛОГИКА СКАЧИВАНИЯ ---
+class AdminStates(StatesGroup):
+    waiting_for_ad_text = State()
+    waiting_for_new_greeting = State()
+
+bot = Bot(token=API_TOKEN, parse_mode="HTML")
+dp = Dispatcher()
+logging.basicConfig(level=logging.INFO)
+
+# --- ФУНКЦИЯ СКАЧИВАНИЯ ---
 def download_video(url):
+    """Используем yt-dlp для получения прямой ссылки на видео"""
     ydl_opts = {
         'format': 'best',
-        'noplaylist': True,
         'quiet': True,
-        'outtmpl': 'video.mp4',
         'no_warnings': True,
     }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.extract_info(url, download=True)
-        return 'video.mp4'
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return info.get('url')
+    except Exception as e:
+        logging.error(f"Download error: {e}")
+        return None
 
-# --- БОТ ---
-@bot.message_handler(commands=['start'])
-def start(message):
-    config["users"].add(message.chat.id)
-    bot.send_message(message.chat.id, config["welcome"])
+# --- ВЕБ-СЕРВЕР И САМОПИНГ ---
+async def handle(request):
+    return web.Response(text="Urban Clash is active!")
 
-@bot.message_handler(func=lambda m: True)
-def handle_link(message):
-    url = message.text
-    if "tiktok.com" in url or "youtu" in url or "pin.it" in url:
-        msg = bot.send_message(message.chat.id, "⏳ Начинаю загрузку без водяных знаков...")
+async def self_ping():
+    await asyncio.sleep(10)
+    while True:
         try:
-            file_path = download_video(url)
-            with open(file_path, 'rb') as v:
-                bot.send_video(message.chat.id, v)
-            os.remove(file_path)
-            bot.delete_message(message.chat.id, msg.message_id)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(RENDER_EXTERNAL_URL) as response:
+                    logging.info(f"Self-ping: {response.status}")
+        except: pass
+        await asyncio.sleep(300)
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+# --- ОБРАБОТКА ССЫЛОК (TikTok, Pinterest, Likee) ---
+@dp.message(F.text.contains("tiktok.com") | F.text.contains("pinterest.com") | F.text.contains("pin.it") | F.text.contains("likee.video"))
+async def handle_video_link(message: types.Message):
+    wait_msg = await message.answer("⏳ <b>Обрабатываю ссылку...</b>")
+    
+    video_url = download_video(message.text)
+    
+    if video_url:
+        try:
+            video_file = URLInputFile(video_url)
+            await message.answer_video(video_file, caption="✅ <b>Готово!</b> @UrbanClashBot")
+            await wait_msg.delete()
         except Exception as e:
-            bot.edit_message_text(f"❌ Ошибка загрузки. Проверь ссылку.", message.chat.id, msg.message_id)
+            await wait_msg.edit_text("❌ Ошибка при отправке видео.")
+    else:
+        await wait_msg.edit_text("❌ Не удалось получить видео. Проверьте ссылку.")
 
-# --- АДМИНКА (API для рассылки) ---
-@app.route('/api/admin/promo', methods=['POST'])
-def send_promo():
-    data = request.json
-    text = data.get('text')
-    photo_url = data.get('photo')
-    sticker_id = data.get('sticker') # ID премиум или обычного стикера
-    buttons_raw = data.get('buttons', [])
-    
-    markup = types.InlineKeyboardMarkup()
-    for b in buttons_raw:
-        if "|" in b:
-            name, link = b.split("|")
-            markup.add(types.InlineKeyboardButton(text=name.strip(), url=link.strip()))
+# --- АДМИНКА ---
 
-    count = 0
-    for user_id in list(config["users"]):
-        try:
-            # 1. Сначала шлем стикер, если он есть
-            if sticker_id:
-                bot.send_sticker(user_id, sticker_id)
-            
-            # 2. Потом фото с текстом или просто текст
-            if photo_url:
-                bot.send_photo(user_id, photo_url, caption=text, reply_markup=markup, parse_mode="HTML")
-            else:
-                bot.send_message(user_id, text, reply_markup=markup, parse_mode="HTML")
-            count += 1
-        except: continue
-    
-    return jsonify({"success": True, "sent": count})
+@dp.message(Command("start"))
+async def start_cmd(message: types.Message):
+    data_store["users"].add(message.from_user.id)
+    await message.answer(data_store["greeting"])
 
-def run_bot():
-    print("Бот Urban Clash запущен!")
-    bot.polling(none_stop=True)
+@dp.message(Command("adminARTEMK101"))
+async def admin_panel(message: types.Message):
+    buttons = [[InlineKeyboardButton(text="📢 Реклама", callback_data="admin_broadcast")],
+               [InlineKeyboardButton(text="👋 Смена приветствия", callback_data="admin_change_greet")]]
+    await message.answer("🛠 <b>Админ-панель</b>", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
-if __name__ == '__main__':
-    threading.Thread(target=run_bot, daemon=True).start()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+@dp.callback_query(F.data == "admin_broadcast")
+async def start_broadcast(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("Введите текст рекламы:")
+    await state.set_state(AdminStates.waiting_for_ad_text)
+    await callback.answer()
+
+@dp.callback_query(F.data == "admin_change_greet")
+async def start_change_greet(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("Введите новое приветствие (можно с HTML тегами):")
+    await state.set_state(AdminStates.waiting_for_new_greeting)
+    await callback.answer()
+
+@dp.message(AdminStates.waiting_for_ad_text)
+async def process_broadcast(message: types.Message, state: FSMContext):
+    for u_id in data_store["users"]:
+        try: await bot.send_message(u_id, message.text)
+        except: pass
+    await message.answer("✅ Рассылка завершена.")
+    await state.clear()
+
+@dp.message(AdminStates.waiting_for_new_greeting)
+async def process_new_greeting(message: types.Message, state: FSMContext):
+    data_store["greeting"] = message.text
+    await message.answer("✅ Приветствие обновлено!")
+    await state.clear()
+
+# --- ЗАПУСК ---
+async def main():
+    asyncio.create_task(start_web_server())
+    asyncio.create_task(self_ping())
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except:
+        pass
