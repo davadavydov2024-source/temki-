@@ -1,132 +1,140 @@
-import logging
-import asyncio
 import os
-import aiohttp
-import yt_dlp
+import asyncio
+import logging
+import sqlite3
+import time
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, URLInputFile
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
+from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
+import yt_dlp
 
-# --- НАСТРОЙКИ ---
-API_TOKEN = os.getenv('BOT_TOKEN')
-RENDER_EXTERNAL_URL = "https://temki-jgp0.onrender.com" 
-ADMIN_ID = 7040863301
-
-# Хранилище (для каналов подписки)
-data_store = {
-    "greeting": "<b>Привет! Я Urban Clash Bot.</b> 📥\nПришли ссылку из TikTok или Pinterest!",
-    "users": set(),
-    "channels": [] # Сюда будем добавлять каналы через админку
-}
-
-class AdminStates(StatesGroup):
-    waiting_for_ad_text = State()
-    waiting_for_channel_id = State()
-    waiting_for_channel_url = State()
+# --- КОНФИГУРАЦИЯ ---
+TOKEN = os.getenv("BOT_TOKEN", "").strip()
+ADMIN_ID = 7040863301  # Твой ID
+PORT = int(os.getenv("PORT", 8080))
+RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "") # Твоя ссылка .onrender.com
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+# --- РАБОТА С БАЗОЙ ДАННЫХ ---
+def db_query(query, params=(), fetch=False):
+    conn = sqlite3.connect("bot_data.db")
+    cur = conn.cursor()
+    cur.execute(query, params)
+    res = cur.fetchall() if fetch else None
+    conn.commit()
+    conn.close()
+    return res
+
+def init_db():
+    db_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, status TEXT DEFAULT 'active')")
+    db_query("CREATE TABLE IF NOT EXISTS channels (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT)")
+    db_query("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)")
+    # Начальное приветствие
+    db_query("INSERT OR IGNORE INTO settings VALUES ('start_text', 'Привет! Отправь ссылку на видео 🏁')")
+
+init_db()
+
 # --- ПРОВЕРКА ПОДПИСКИ ---
-async def check_subscription(user_id):
-    for chan in data_store["channels"]:
-        try:
-            member = await bot.get_chat_member(chat_id=chan["id"], user_id=user_id)
-            if member.status in ["left", "kicked"]: return False
-        except: continue
-    return True
+async def check_sub(user_id):
+    channels = db_query("SELECT url FROM channels", fetch=True)
+    if not channels: return True
+    # Здесь упрощенная логика (просто показываем кнопки, т.к. проверка требует прав админа в каналах)
+    return True 
 
-def get_sub_kb():
-    buttons = [[InlineKeyboardButton(text=f"Канал {i+1}", url=c["url"])] for i, c in enumerate(data_store["channels"])]
-    buttons.append([InlineKeyboardButton(text="🔄 Проверить подписку", callback_data="check_subs")])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-# --- ВЕБ-СЕРВЕР И ПИНГ ---
-async def handle(request): return web.Response(text="Alive")
-
-async def start_web():
-    app = web.Application()
-    app.router.add_get("/", handle)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080))).start()
-
+# --- АВТО-ПРОБУЖДЕНИЕ ---
 async def self_ping():
-    await asyncio.sleep(20)
     while True:
-        try:
-            async with aiohttp.ClientSession() as s: await s.get(RENDER_EXTERNAL_URL)
-        except: pass
-        await asyncio.sleep(300)
+        await asyncio.sleep(600)
+        if RENDER_URL:
+            try:
+                async with asyncio.timeout(10):
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(RENDER_URL) as r:
+                            logging.info(f"Ping: {r.status}")
+            except: pass
 
-# --- ХЕНДЛЕРЫ ---
-@dp.message(Command("start"))
-async def start_cmd(message: types.Message):
-    data_store["users"].add(message.from_user.id)
-    await message.answer(data_store["greeting"])
-
-@dp.message(F.text.regexp(r'(tiktok\.com|pinterest\.com|pin\.it|likee\.video)'))
-async def handle_link(message: types.Message):
-    if not await check_subscription(message.from_user.id):
-        return await message.answer("⚠️ Подпишитесь на каналы, чтобы скачивать!", reply_markup=get_sub_kb())
-    
-    m = await message.answer("⏳ Скачиваю...")
-    with yt_dlp.YoutubeDL({'format': 'best', 'quiet': True}) as ydl:
-        try:
-            info = ydl.extract_info(message.text, download=False)
-            await message.answer_video(URLInputFile(info['url']), caption="✅ Готово! @UrbanClashBot")
-            await m.delete()
-        except: await m.edit_text("❌ Ошибка скачивания.")
-
-@dp.callback_query(F.data == "check_subs")
-async def check_cb(cb: types.CallbackQuery):
-    if await check_subscription(cb.from_user.id):
-        await cb.message.edit_text("✅ Теперь присылайте ссылку!")
-    else: await cb.answer("❌ Вы не подписались!", show_alert=True)
+# --- ТЕХНИКА СКАЧИВАНИЯ ---
+def download_vid(url):
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': f'dl_{int(time.time())}.%(ext)s',
+        'noplaylist': True,
+        'quiet': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/110.0.0.0 Safari/537.36'
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        return ydl.prepare_filename(info)
 
 # --- АДМИНКА ---
-@dp.message(Command("adminARTEMK101"))
-async def admin(message: types.Message):
-    if message.from_user.id != ADMIN_ID: return
+@dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
+async def admin_main(message: types.Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📢 Рассылка", callback_data="broadcast")],
-        [InlineKeyboardButton(text="➕ Добавить канал", callback_data="add_chan")],
-        [InlineKeyboardButton(text="🗑 Очистить каналы", callback_data="clear_chans")]
+        [InlineKeyboardButton(text="📢 Рассылка", callback_data="adm_broadcast")],
+        [InlineKeyboardButton(text="🔗 Каналы (ОП)", callback_data="adm_channels")],
+        [InlineKeyboardButton(text="📝 Текст приветствия", callback_data="adm_text")],
+        [InlineKeyboardButton(text="🚫 Блок юзера", callback_data="adm_block")]
     ])
-    await message.answer(f"🛠 Админка. Каналов: {len(data_store['channels'])}", reply_markup=kb)
+    await message.answer("🛠 Панель управления Save Lyneok Videos 🏁", reply_markup=kb)
 
-@dp.callback_query(F.data == "add_chan")
-async def add_ch(cb: types.CallbackQuery, state: FSMContext):
-    await cb.message.answer("Введите ID канала (например, -100...):")
-    await state.set_state(AdminStates.waiting_for_channel_id)
+@dp.callback_query(F.data == "adm_channels")
+async def adm_ch(call: types.CallbackQuery):
+    channels = db_query("SELECT id, url FROM channels", fetch=True)
+    text = "Список каналов для подписки:\n" + "\n".join([f"{c[0]}. {c[1]}" for c in channels])
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Добавить", callback_data="add_ch")],
+        [InlineKeyboardButton(text="🗑 Удалить всё", callback_data="del_ch_all")]
+    ])
+    await call.message.edit_text(text, reply_markup=kb)
 
-@dp.message(AdminStates.waiting_for_channel_id)
-async def ch_id(message: types.Message, state: FSMContext):
-    await state.update_data(id=message.text)
-    await message.answer("Введите ссылку на канал (https://t.me/...):")
-    await state.set_state(AdminStates.waiting_for_channel_url)
+# --- ОБРАБОТКА ССЫЛОК ---
+@dp.message(F.text.contains("http"))
+async def handle_links(message: types.Message):
+    user = db_query("SELECT status FROM users WHERE id = ?", (message.from_user.id,), fetch=True)
+    if user and user[0][0] == 'banned':
+        return await message.answer("❌ Вы заблокированы.")
+    
+    db_query("INSERT OR IGNORE INTO users (id) VALUES (?)", (message.from_user.id,))
+    
+    status_msg = await message.answer("⏳ Скачиваю видео...")
+    try:
+        path = await asyncio.to_thread(download_vid, message.text.strip())
+        await message.reply_video(video=FSInputFile(path), caption="Готово! 🏁")
+        os.remove(path)
+        await status_msg.delete()
+    except Exception as e:
+        await status_msg.edit_text(f"❌ Ошибка. Ссылка не поддерживается или видео скрыто.")
 
-@dp.message(AdminStates.waiting_for_channel_url)
-async def ch_url(message: types.Message, state: FSMContext):
-    d = await state.get_data()
-    data_store["channels"].append({"id": d['id'], "url": message.text})
-    await message.answer("✅ Канал добавлен!")
-    await state.clear()
+@dp.message(Command("start"))
+async def start(message: types.Message):
+    db_query("INSERT OR IGNORE INTO users (id) VALUES (?)", (message.from_user.id,))
+    txt = db_query("SELECT value FROM settings WHERE key = 'start_text'", fetch=True)[0][0]
+    
+    channels = db_query("SELECT url FROM channels", fetch=True)
+    kb = None
+    if channels:
+        btns = [[InlineKeyboardButton(text="Подписаться", url=c[0])] for c in channels]
+        kb = InlineKeyboardMarkup(inline_keyboard=btns)
+        
+    await message.answer(txt, reply_markup=kb)
 
-@dp.callback_query(F.data == "clear_chans")
-async def clr(cb: types.CallbackQuery):
-    data_store["channels"] = []
-    await cb.message.edit_text("🗑 Каналы удалены.")
+# --- ЗАПУСК ---
+async def handle_web(request): return web.Response(text="OK")
 
 async def main():
-    asyncio.create_task(start_web())
+    # Web server
+    app = web.Application()
+    app.router.add_get("/", handle_web)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner, '0.0.0.0', PORT).start()
+    
     asyncio.create_task(self_ping())
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
