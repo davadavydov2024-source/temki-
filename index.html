@@ -210,5 +210,137 @@
             }
         }
     </script>
+/**
+ * LYNEOK - CORE SYSTEM ENGINE
+ * Управляет админкой, чатами, рассылкой и тех. перерывами.
+ */
+
+const LyneokSystem = {
+    // 1. Управление Техническими перерывами
+    techBreak: {
+        init: async function() {
+            const snapshot = await get(ref(db, 'system/techBreak'));
+            const data = snapshot.val();
+            if (data && data.active) {
+                this.showOverlay(data);
+            }
+        },
+        showOverlay: function(data) {
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 z-50 bg-black flex flex-col items-center justify-center';
+            overlay.innerHTML = `
+                <h1 class="text-5xl font-bold text-white mb-4">${data.title}</h1>
+                <p class="text-gray-400 mb-8">${data.description}</p>
+                <div id="timer" class="text-6xl font-mono text-brandBlue mb-8">00:00:00</div>
+                <button onclick="LyneokSystem.techBreak.disableForAdmin()" class="bg-gray-800 px-6 py-2 rounded-full">Выключить у меня</button>
+            `;
+            document.body.appendChild(overlay);
+        },
+        disableForAdmin: function() {
+            // Локальное скрытие для админа (тёмвв куго)
+            document.querySelector('.fixed.inset-0').remove();
+        }
+    },
+
+    // 2. Админ-панель: Управление пользователями и выдача галочек
+    adminPanel: {
+        renderUsers: async function() {
+            const usersRef = ref(db, 'users');
+            const snapshot = await get(usersRef);
+            const users = snapshot.val();
+            const container = document.getElementById('admin-users-list');
+            container.innerHTML = '';
+            
+            Object.keys(users).forEach(uid => {
+                const user = users[uid];
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-panelBg p-4 rounded-lg mb-2">
+                        <div>
+                            <p class="font-bold">${user.username}</p>
+                            <p class="text-xs text-gray-500">${user.email}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="LyneokSystem.adminPanel.giveBadge('${uid}', 'rainbow')" class="text-xs bg-purple-600 px-2 py-1 rounded">Галочка</button>
+                            <button onclick="LyneokSystem.adminPanel.banUser('${uid}')" class="text-xs bg-red-600 px-2 py-1 rounded">Бан</button>
+                        </div>
+                    </div>
+                `;
+            });
+        },
+        giveBadge: async function(uid, badgeType) {
+            await set(ref(db, `users/${uid}/badge`), badgeType);
+            alert("Галочка выдана!");
+        }
+    },
+
+    // 3. Система чатов и сделок
+    chat: {
+        sendMessage: async function(chatId, text) {
+            const chatRef = ref(db, `chats/${chatId}/messages`);
+            const newMessageRef = push(chatRef);
+            await set(newMessageRef, {
+                sender: currentUser.username,
+                text: text,
+                timestamp: Date.now()
+            });
+            // Отправка уведомления на почту через EmailJS
+            emailjs.send("service_ndr83sj", "template_q98pr7g", {
+                to_email: "receiver@email.com",
+                message: `Новое сообщение в сделке: ${text}`
+            });
+        }
+    },
+
+    // 4. Рекламный баннер
+    ads: {
+        renderBanner: async function() {
+            const adData = await get(ref(db, 'system/activeAd'));
+            if (adData.exists()) {
+                const banner = document.getElementById('main-banner');
+                banner.style.backgroundImage = `url(${adData.val().image})`;
+            }
+        }
+    }
+};
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    LyneokSystem.techBreak.init();
+});
+
+/**
+ * ОГРОМНЫЙ БЛОК ВЕРСТКИ ДЛЯ АДМИНКИ И СДЕЛОК
+ * Вставляется динамически в #main-content
+ */
+const AdminDashboardHTML = `
+    <div class="p-6">
+        <h2 class="text-2xl font-bold mb-6">Панель управления «тёмвв куго»</h2>
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            <div class="bg-panelBg p-4 rounded-xl border border-gray-700">
+                <p class="text-gray-400">Пользователи</p>
+                <h3 class="text-2xl font-bold">12 580</h3>
+            </div>
+            <div class="bg-panelBg p-4 rounded-xl border border-gray-700">
+                <p class="text-gray-400">Сделки</p>
+                <h3 class="text-2xl font-bold">24 731</h3>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-8">
+            <div class="bg-panelBg p-6 rounded-xl border border-gray-700">
+                <h3 class="text-lg font-bold mb-4">Пользователи</h3>
+                <div id="admin-users-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-panelBg p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-bold mb-4">Рассылка всем</h3>
+                    <textarea class="w-full bg-darkBg p-2 rounded mb-2 border border-gray-600" placeholder="Текст сообщения..."></textarea>
+                    <button class="w-full bg-brandBlue py-2 rounded">Отправить в бота Lyneok News</button>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
 </body>
 </html>
