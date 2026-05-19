@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LYNEOK - Маркетплейс игровых ценностей</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Кастомные цвета под дизайн Playerok */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0e14',
+                        panelBg: '#151a23',
+                        brandBlue: '#1d4ed8',
+                        brandHover: '#2563eb',
+                        textMuted: '#9ca3af'
+                    }
+                }
+            }
+        }
+        body { background-color: #0b0e14; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hidden { display: none !important; }
+    </style>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("9M8GxYWeMi6hJP6Rg"); // Твой ключ EmailJS
+        })();
+    </script>
+</head>
+<body class="h-screen w-screen overflow-hidden flex">
+
+    <div id="auth-screen" class="w-full h-full flex items-center justify-center bg-darkBg">
+        <div class="bg-panelBg p-8 rounded-2xl shadow-lg w-96 border border-gray-800">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold tracking-wider"><i class="fa-solid fa-gamepad text-brandBlue"></i> LYNEOK</h1>
+                <p class="text-textMuted text-sm mt-2">Создайте аккаунт или войдите</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <input type="text" id="username" placeholder="Никнейм (например: тёмвв куго)" class="w-full bg-darkBg border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brandBlue transition" required>
+                <input type="email" id="email" placeholder="Email" class="w-full bg-darkBg border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brandBlue transition" required>
+                <input type="password" id="password" placeholder="Пароль" class="w-full bg-darkBg border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brandBlue transition" required>
+                
+                <button type="submit" class="w-full bg-brandBlue hover:bg-brandHover text-white font-bold py-3 rounded-lg transition duration-200" id="auth-btn">
+                    Войти / Зарегистрироваться
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-screen" class="w-full h-full flex hidden">
+        
+        <aside class="w-64 bg-panelBg border-r border-gray-800 flex flex-col justify-between">
+            <div>
+                <div class="p-6">
+                    <h1 class="text-2xl font-bold"><i class="fa-solid fa-gamepad text-brandBlue"></i> LYNEOK</h1>
+                </div>
+                <nav class="px-4 space-y-2">
+                    <a href="#" class="flex items-center gap-3 px-4 py-3 bg-brandBlue bg-opacity-20 text-brandBlue rounded-lg font-medium"><i class="fa-solid fa-house"></i> Главная</a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-textMuted hover:bg-gray-800 rounded-lg transition"><i class="fa-solid fa-list"></i> Каталог игр</a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-textMuted hover:bg-gray-800 rounded-lg transition"><i class="fa-solid fa-fire"></i> Популярное</a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-3 text-textMuted hover:bg-gray-800 rounded-lg transition"><i class="fa-solid fa-plus text-brandBlue"></i> Создать товар</a>
+                </nav>
+            </div>
+            
+            <div class="p-4 border-t border-gray-800 space-y-2">
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-textMuted hover:bg-gray-800 rounded-lg transition relative">
+                    <i class="fa-solid fa-message"></i> Сообщения
+                    <span class="absolute right-4 bg-brandBlue text-xs px-2 py-1 rounded-full">5</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-textMuted hover:bg-gray-800 rounded-lg transition"><i class="fa-solid fa-user"></i> Профиль</a>
+                
+                <button id="admin-panel-btn" class="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-gray-800 rounded-lg transition hidden font-bold">
+                    <i class="fa-solid fa-hammer"></i> Админ Панель
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col bg-darkBg">
+            <header class="h-16 border-b border-gray-800 flex items-center justify-between px-8">
+                <div class="relative w-96">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-textMuted"></i>
+                    <input type="text" placeholder="Поиск товаров, игр, продавцов..." class="w-full bg-panelBg border border-gray-700 rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-brandBlue">
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-panelBg px-4 py-2 rounded-full border border-gray-700">
+                        <i class="fa-solid fa-wallet text-brandBlue"></i>
+                        <span class="font-bold">0 ₽</span>
+                    </div>
+                    <div class="flex items-center gap-3 cursor-pointer">
+                        <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full border-2 border-brandBlue">
+                        <span id="display-username" class="font-medium">Загрузка...</span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="main-content" class="p-8 overflow-y-auto">
+                
+                <div class="w-full bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl p-8 mb-8 flex justify-between items-center relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-4xl font-bold mb-2">НОВЫЕ СКИНЫ<br>УЖЕ НА LYNEOK!</h2>
+                        <p class="text-blue-200 mb-4">Покупай быстро и безопасно.</p>
+                        <button class="bg-brandBlue hover:bg-brandHover text-white px-8 py-3 rounded-full font-bold transition">Купить</button>
+                    </div>
+                    <div class="absolute right-10 bottom-0 opacity-80 h-full">
+                        <i class="fa-solid fa-star text-9xl text-yellow-500 mt-10"></i>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mb-4">Популярные игры</h3>
+                <div class="grid grid-cols-6 gap-4 mb-8">
+                    <div class="bg-panelBg p-3 rounded-xl border border-gray-800 text-center hover:border-brandBlue cursor-pointer transition">
+                        <div class="w-16 h-16 bg-blue-600 rounded-lg mx-auto mb-2 flex items-center justify-center"><i class="fa-solid fa-star text-2xl"></i></div>
+                        <span class="text-sm font-bold">Brawl Stars</span>
+                    </div>
+                    <div class="bg-panelBg p-3 rounded-xl border border-gray-800 text-center hover:border-brandBlue cursor-pointer transition">
+                        <div class="w-16 h-16 bg-gray-600 rounded-lg mx-auto mb-2 flex items-center justify-center"><i class="fa-solid fa-cube text-2xl"></i></div>
+                        <span class="text-sm font-bold">Roblox</span>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Твои данные Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbfPtl2auXZeiFlTBgrw5HUR742SlBM88",
+            authDomain: "gawr-69377.firebaseapp.com",
+            databaseURL: "https://gawr-69377-default-rtdb.firebaseio.com",
+            projectId: "gawr-69377",
+            storageBucket: "gawr-69377.firebasestorage.app",
+            messagingSenderId: "89649220321",
+            appId: "1:89649220321:web:479e1aa4ee08517a5cc5a0",
+            measurementId: "G-B9QNGMXCTT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Управление UI
+        const authScreen = document.getElementById('auth-screen');
+        const appScreen = document.getElementById('app-screen');
+        const authForm = document.getElementById('auth-form');
+        const displayUsername = document.getElementById('display-username');
+        const adminBtn = document.getElementById('admin-panel-btn');
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const usernameInput = document.getElementById('username').value;
+            const btn = document.getElementById('auth-btn');
+            
+            btn.innerText = "Загрузка...";
+
+            try {
+                // Пытаемся залогиниться
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                loginSuccess(usernameInput);
+            } catch (error) {
+                // Если аккаунта нет, регистрируем
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    try {
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        // Записываем данные в Realtime DB (без пароля!)
+                        await set(ref(db, 'users/' + userCredential.user.uid), {
+                            username: usernameInput,
+                            email: email,
+                            role: usernameInput === "тёмвв куго" ? "admin" : "user",
+                            balance: 0
+                        });
+                        
+                        // Отправка письма об успешной регистрации через EmailJS
+                        emailjs.send("service_ndr83sj", "template_q98pr7g", {
+                            to_email: email,
+                            message: `Привет, ${usernameInput}! Добро пожаловать на Lyneok!`
+                        });
+
+                        loginSuccess(usernameInput);
+                    } catch (regError) {
+                        alert("Ошибка регистрации: " + regError.message);
+                    }
+                } else {
+                    alert("Ошибка входа: " + error.message);
+                }
+            }
+            btn.innerText = "Войти / Зарегистрироваться";
+        });
+
+        function loginSuccess(username) {
+            authScreen.classList.add('hidden');
+            appScreen.classList.remove('hidden');
+            displayUsername.innerText = username;
+
+            // Проверка на админа
+            if (username === "тёмвв куго") {
+                adminBtn.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
