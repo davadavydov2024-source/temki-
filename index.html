@@ -5,16 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LYNEOK — Маркетплейс игровых товаров</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-<!-- Firebase COMPAT (работает с обычными функциями) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyAbfPtl2auXZeiFlTBgrw5HUR742SlBM88",
@@ -31,7 +26,6 @@ const db = firebase.database();
 const storage = firebase.storage();
 try { emailjs.init("9M8GxYWeMi6hJP6Rg"); } catch(e){}
 </script>
-
 <style>
 :root{
   --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1d28;--bg4:#20243a;
@@ -60,10 +54,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .timer-num{font-size:36px;font-weight:900;color:var(--blue);line-height:1}
 .timer-label{font-size:10px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
 
-/* LAYOUT */
-#app{display:flex;height:100vh;overflow:hidden}
+/* AUTH GATE MODAL */
+#auth-gate{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
+#auth-gate.active{display:flex;}
+.auth-gate-box{width:100%;max-width:440px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:modalIn .25s ease;}
+.auth-gate-header{background:linear-gradient(135deg,var(--bg3),var(--bg4));padding:28px 28px 20px;text-align:center;position:relative;}
+.auth-gate-header .close-gate{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.auth-gate-header .close-gate:hover{color:var(--text);background:rgba(255,255,255,0.15);}
+.auth-gate-logo{font-size:36px;margin-bottom:6px;}
+.auth-gate-title{font-size:20px;font-weight:800;margin-bottom:6px;}
+.auth-gate-sub{font-size:13px;color:var(--text2);}
+.auth-gate-body{padding:24px 28px 28px;}
+.auth-gate-tabs{display:flex;background:var(--bg3);border-radius:var(--radius2);padding:3px;margin-bottom:20px;gap:3px;}
+.auth-gate-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;border-radius:6px;transition:all var(--tr);}
+.auth-gate-tab.active{background:var(--blue);color:#fff;}
 
-/* AUTH */
+/* MAIN AUTH OVERLAY (initial) */
 #auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--bg);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px}
 #auth-overlay.active{display:flex}
 .auth-box{width:100%;max-width:420px;padding:28px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin:auto}
@@ -98,6 +104,24 @@ textarea.form-input{resize:vertical;min-height:90px}
 .form-checkbox{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);margin-bottom:14px;cursor:pointer}
 .form-checkbox input{margin-top:2px;accent-color:var(--blue);flex-shrink:0}
 .form-checkbox a{color:var(--blue);text-decoration:none}
+
+/* GUEST BANNER */
+.guest-banner{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.guest-banner-icon{font-size:28px;flex-shrink:0;}
+.guest-banner-text h4{font-size:15px;font-weight:700;margin-bottom:3px;}
+.guest-banner-text p{font-size:13px;color:var(--text2);}
+.guest-banner-btn{margin-left:auto;background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:var(--radius2);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:var(--font);}
+.guest-banner-btn:hover{background:var(--blue2);}
+
+/* LOCKED PAGE */
+.locked-page{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;gap:16px;}
+.locked-icon{font-size:64px;}
+.locked-title{font-size:22px;font-weight:800;}
+.locked-sub{font-size:14px;color:var(--text2);max-width:360px;line-height:1.6;}
+.locked-btns{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;justify-content:center;}
+
+/* LAYOUT */
+#app{display:flex;height:100vh;overflow:hidden}
 
 /* SIDEBAR */
 #sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;z-index:100}
@@ -138,6 +162,8 @@ textarea.form-input{resize:vertical;min-height:90px}
 .icon-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);cursor:pointer;color:var(--text2);font-size:18px;transition:all var(--tr);position:relative}
 .icon-btn:hover{color:var(--text);border-color:var(--blue)}
 .icon-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--blue);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:6px;min-width:14px;text-align:center}
+.btn-login-topbar{background:var(--blue);color:#fff;border:none;padding:0 16px;height:38px;border-radius:var(--radius2);font-weight:700;font-size:14px;cursor:pointer;font-family:var(--font);}
+.btn-login-topbar:hover{background:var(--blue2);}
 
 /* CONTENT */
 #content{flex:1;overflow-y:auto}
@@ -299,7 +325,6 @@ textarea.form-input{resize:vertical;min-height:90px}
 .asc-icon{font-size:24px;margin-bottom:8px}
 .asc-val{font-size:24px;font-weight:800;margin-bottom:2px}
 .asc-lbl{font-size:12px;color:var(--text2)}
-.asc-change{font-size:12px;color:var(--green);margin-top:4px}
 .admin-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
 .admin-section h4{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
 .admin-table{width:100%;border-collapse:collapse}
@@ -310,6 +335,18 @@ textarea.form-input{resize:vertical;min-height:90px}
 .status-badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .status-active{background:rgba(34,197,94,.15);color:var(--green)}
 .status-banned{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* TEST ACCOUNT CARD */
+.test-acc-card{background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.08));border:1px solid rgba(59,130,246,0.25);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.test-acc-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.test-acc-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--blue);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;}
+.test-acc-avatar img{width:100%;height:100%;object-fit:cover;}
+.test-acc-creds{background:var(--bg3);border-radius:var(--radius2);padding:14px;font-family:monospace;font-size:13px;line-height:2;border:1px solid var(--border);}
+.test-acc-creds .cred-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.test-acc-creds .cred-key{color:var(--text2);font-size:11px;font-weight:700;text-transform:uppercase;}
+.test-acc-creds .cred-val{color:var(--text);font-weight:600;word-break:break-all;}
+.copy-cred{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--blue);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all var(--tr);}
+.copy-cred:hover{background:var(--blue);color:#fff;}
 
 /* BADGES */
 .badge-blue{background:var(--blue);color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
@@ -392,7 +429,6 @@ textarea.form-input{resize:vertical;min-height:90px}
 .mobile-nav-fab{width:48px;height:48px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(59,130,246,.4);border:none;font-family:var(--font);transition:transform var(--tr)}
 .mobile-nav-fab:hover{transform:scale(1.05)}
 
-/* RESPONSIVE */
 @media(max-width:900px){
   #sidebar{display:none}
   #mobile-nav{display:flex}
@@ -429,8 +465,75 @@ textarea.form-input{resize:vertical;min-height:90px}
   <button class="btn-danger hidden" id="maint-admin-btn" onclick="disableMaint()">Выключить у меня</button>
 </div>
 
-<!-- AUTH -->
-<div id="auth-overlay" class="active">
+<!-- AUTH GATE (для защищённых страниц) -->
+<div id="auth-gate">
+  <div class="auth-gate-box">
+    <div class="auth-gate-header">
+      <button class="close-gate" onclick="closeAuthGate()">✕</button>
+      <div class="auth-gate-logo">🎮</div>
+      <div class="auth-gate-title">Требуется аккаунт</div>
+      <div class="auth-gate-sub" id="gate-reason">Войдите или создайте аккаунт для доступа</div>
+    </div>
+    <div class="auth-gate-body">
+      <div class="auth-gate-tabs">
+        <div class="auth-gate-tab active" id="gate-tab-login" onclick="switchGateTab('login')">Войти</div>
+        <div class="auth-gate-tab" id="gate-tab-reg" onclick="switchGateTab('register')">Регистрация</div>
+      </div>
+
+      <!-- GATE LOGIN -->
+      <div id="gate-login-form">
+        <div class="form-group">
+          <label class="form-label">Email или никнейм</label>
+          <input class="form-input" id="gate-email" type="text" placeholder="Введите email или никнейм">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input class="form-input" id="gate-pass" type="password" placeholder="Введите пароль" onkeydown="if(event.key==='Enter')gateLogin()">
+        </div>
+        <div id="gate-login-err" class="form-error hidden"></div>
+        <button class="auth-submit" id="gate-login-btn" onclick="gateLogin()">Войти</button>
+        <div style="text-align:center;margin-top:10px;font-size:13px;color:var(--text2)">Нет аккаунта? <a style="color:var(--blue);cursor:pointer;font-weight:600" onclick="switchGateTab('register')">Зарегистрироваться</a></div>
+      </div>
+
+      <!-- GATE REGISTER -->
+      <div id="gate-reg-form" class="hidden">
+        <div style="text-align:center;margin-bottom:14px">
+          <div class="auth-avatar-upload" onclick="document.getElementById('gate-av-inp').click()">
+            <img id="gate-av-preview" class="hidden" src="" alt="">
+            <div id="gate-av-ph"><div style="font-size:22px;color:var(--text3)">📷</div><div style="font-size:10px;color:var(--text3);margin-top:3px">Фото</div></div>
+          </div>
+          <input type="file" id="gate-av-inp" accept="image/*" class="hidden" onchange="previewGateAvatar(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Никнейм</label>
+          <input class="form-input" id="gate-nick" type="text" placeholder="Минимум 3 символа, без пробелов">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="gate-reg-email" type="email" placeholder="Введите email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input class="form-input" id="gate-reg-pass" type="password" placeholder="Минимум 6 символов">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Повторите пароль</label>
+          <input class="form-input" id="gate-reg-pass2" type="password" placeholder="Повторите пароль">
+        </div>
+        <label class="form-checkbox">
+          <input type="checkbox" id="gate-agree">
+          Я согласен с <a href="#" onclick="return false">правилами</a>
+        </label>
+        <div id="gate-reg-err" class="form-error hidden"></div>
+        <button class="auth-submit" id="gate-reg-btn" onclick="gateRegister()">Зарегистрироваться</button>
+        <div style="text-align:center;margin-top:10px;font-size:13px;color:var(--text2)">Уже есть аккаунт? <a style="color:var(--blue);cursor:pointer;font-weight:600" onclick="switchGateTab('login')">Войти</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY (первичный, показывается если нет сессии) -->
+<div id="auth-overlay">
   <div class="auth-box">
     <div class="auth-logo">
       <div class="logo-text">🎮 LYNEOK</div>
@@ -440,8 +543,6 @@ textarea.form-input{resize:vertical;min-height:90px}
       <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Войти</div>
       <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</div>
     </div>
-
-    <!-- LOGIN -->
     <div id="login-form">
       <div class="form-group">
         <label class="form-label">Email или никнейм</label>
@@ -449,7 +550,7 @@ textarea.form-input{resize:vertical;min-height:90px}
       </div>
       <div class="form-group">
         <label class="form-label">Пароль</label>
-        <input class="form-input" id="login-password" type="password" placeholder="Введите пароль" autocomplete="current-password">
+        <input class="form-input" id="login-password" type="password" placeholder="Введите пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div id="login-error" class="form-error hidden"></div>
       <button class="auth-submit" id="login-btn" onclick="doLogin()">Войти</button>
@@ -459,10 +560,11 @@ textarea.form-input{resize:vertical;min-height:90px}
         <div class="social-btn" onclick="showNotif('Apple вход скоро будет доступен','info')">🍎</div>
         <div class="social-btn" onclick="showNotif('Telegram вход скоро будет доступен','info')">✈️</div>
       </div>
+      <div style="margin-top:16px">
+        <button class="btn-secondary w-full" onclick="enterAsGuest()" style="font-size:14px">👀 Смотреть без регистрации</button>
+      </div>
       <div class="auth-switch">Нет аккаунта? <a onclick="switchAuthTab('register')">Зарегистрироваться</a></div>
     </div>
-
-    <!-- REGISTER -->
     <div id="register-form" class="hidden">
       <div class="auth-avatar-upload" onclick="document.getElementById('reg-av-inp').click()">
         <img id="reg-av-preview" class="hidden" src="" alt="">
@@ -474,7 +576,7 @@ textarea.form-input{resize:vertical;min-height:90px}
       <input type="file" id="reg-av-inp" accept="image/*" class="hidden" onchange="previewRegAvatar(this)">
       <div class="form-group">
         <label class="form-label">Никнейм</label>
-        <input class="form-input" id="reg-nick" type="text" placeholder="Без пробелов, мин. 3 символа" autocomplete="username">
+        <input class="form-input" id="reg-nick" type="text" placeholder="Без пробелов, мин. 3 символа">
       </div>
       <div class="form-group">
         <label class="form-label">Email</label>
@@ -482,11 +584,11 @@ textarea.form-input{resize:vertical;min-height:90px}
       </div>
       <div class="form-group">
         <label class="form-label">Пароль</label>
-        <input class="form-input" id="reg-pass" type="password" placeholder="Минимум 6 символов" autocomplete="new-password">
+        <input class="form-input" id="reg-pass" type="password" placeholder="Минимум 6 символов">
       </div>
       <div class="form-group">
         <label class="form-label">Повторите пароль</label>
-        <input class="form-input" id="reg-pass2" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+        <input class="form-input" id="reg-pass2" type="password" placeholder="Повторите пароль">
       </div>
       <label class="form-checkbox">
         <input type="checkbox" id="reg-agree">
@@ -513,20 +615,20 @@ textarea.form-input{resize:vertical;min-height:90px}
       <div class="nav-item" onclick="showPage('popular')"><span class="nav-icon">🔥</span> Популярное</div>
       <div class="nav-item" onclick="showPage('reviews')"><span class="nav-icon">⭐</span> Отзывы</div>
       <div class="nav-section-label">Личное</div>
-      <div class="nav-item" onclick="showPage('purchases')"><span class="nav-icon">🛍️</span> Мои покупки</div>
-      <div class="nav-item" onclick="showPage('create-product')"><span class="nav-icon">➕</span> Создать товар</div>
-      <div class="nav-item" onclick="showPage('chats')"><span class="nav-icon">💬</span> Сообщения<span class="nav-badge hidden" id="nav-chat-badge">0</span></div>
-      <div class="nav-item" onclick="showPage('notifications')"><span class="nav-icon">🔔</span> Уведомления<span class="nav-badge hidden" id="nav-notif-badge">0</span></div>
-      <div class="nav-item" onclick="showPage('profile')"><span class="nav-icon">👤</span> Профиль</div>
+      <div class="nav-item" onclick="requireAuth('purchases','Просмотр покупок')"><span class="nav-icon">🛍️</span> Мои покупки</div>
+      <div class="nav-item" onclick="requireAuth('create-product','Создание товаров')"><span class="nav-icon">➕</span> Создать товар</div>
+      <div class="nav-item" onclick="requireAuth('chats','Сообщения')"><span class="nav-icon">💬</span> Сообщения<span class="nav-badge hidden" id="nav-chat-badge">0</span></div>
+      <div class="nav-item" onclick="requireAuth('notifications','Уведомления')"><span class="nav-icon">🔔</span> Уведомления<span class="nav-badge hidden" id="nav-notif-badge">0</span></div>
+      <div class="nav-item" onclick="requireAuth('profile','Профиль')"><span class="nav-icon">👤</span> Профиль</div>
       <div class="nav-item" onclick="showPage('support')"><span class="nav-icon">🛟</span> Поддержка</div>
       <div class="nav-item hidden" id="sidebar-admin-btn" onclick="showPage('admin')"><span class="nav-icon">⚙️</span> Админ панель</div>
     </div>
     <div class="sidebar-bottom">
-      <div class="sidebar-user" onclick="showPage('profile')">
+      <div class="sidebar-user" id="sidebar-user-area">
         <div class="sb-avatar" id="sb-avatar">👤</div>
         <div>
-          <div class="sidebar-uname" id="sb-uname">Загрузка...</div>
-          <div class="sidebar-ustatus">● Онлайн</div>
+          <div class="sidebar-uname" id="sb-uname">Гость</div>
+          <div class="sidebar-ustatus" id="sb-status">● Смотрю</div>
         </div>
       </div>
     </div>
@@ -539,12 +641,14 @@ textarea.form-input{resize:vertical;min-height:90px}
         <input type="text" placeholder="Поиск товаров, игр, продавцов..." id="search-input" oninput="handleSearch(this.value)">
       </div>
       <div class="topbar-right">
-        <div class="btn-wallet" onclick="showPage('purchases')">👛 Кошелёк</div>
-        <button class="btn-create" onclick="showPage('create-product')">➕ Создать товар</button>
-        <div class="icon-btn" onclick="showPage('notifications')">🔔<span class="badge hidden" id="tb-notif-badge">0</span></div>
-        <div class="topbar-avatar-btn" onclick="showPage('profile')">
-          <div class="tb-avatar" id="tb-avatar">👤</div>
-          <span class="topbar-uname" id="tb-uname">...</span>
+        <div class="btn-wallet" onclick="requireAuth('purchases','Кошелёк')">👛 Кошелёк</div>
+        <button class="btn-create" onclick="requireAuth('create-product','Создание товаров')">➕ Создать товар</button>
+        <div class="icon-btn" onclick="requireAuth('notifications','Уведомления')">🔔<span class="badge hidden" id="tb-notif-badge">0</span></div>
+        <div id="topbar-user-block">
+          <div class="topbar-avatar-btn" onclick="requireAuth('profile','Профиль')">
+            <div class="tb-avatar" id="tb-avatar">👤</div>
+            <span class="topbar-uname" id="tb-uname">Гость</span>
+          </div>
         </div>
       </div>
     </header>
@@ -552,6 +656,7 @@ textarea.form-input{resize:vertical;min-height:90px}
     <div id="content">
       <!-- HOME -->
       <div class="page active" id="page-home">
+        <div id="guest-banner-home"></div>
         <div id="ads-container"></div>
         <div class="hero-banner" onclick="showPage('catalog')">
           <div class="hero-banner-content">
@@ -611,177 +716,23 @@ textarea.form-input{resize:vertical;min-height:90px}
           </div>
         </div>
         <div id="reviews-list"></div>
-        <button class="btn-leave-review" onclick="openLeaveReview()">✏️ Оставить отзыв</button>
+        <button class="btn-leave-review" onclick="requireAuth('reviews-write','Написание отзывов')">✏️ Оставить отзыв</button>
       </div>
 
-      <!-- PURCHASES -->
-      <div class="page" id="page-purchases">
-        <h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Мои покупки</h2>
-        <div class="empty-state"><div class="empty-icon">🛍️</div><p>Покупок пока нет.<br>Найдите что-нибудь в каталоге!</p></div>
-      </div>
+      <!-- PURCHASES (protected) -->
+      <div class="page" id="page-purchases"></div>
 
-      <!-- CREATE PRODUCT -->
-      <div class="page" id="page-create-product">
-        <h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Создать товар</h2>
-        <div class="create-layout">
-          <div class="create-form">
-            <div class="form-group">
-              <label class="form-label">Фотографии (до 10)</label>
-              <div class="photo-upload" onclick="document.getElementById('prod-photos').click()">
-                <div style="font-size:32px;color:var(--text3);margin-bottom:8px">📸</div>
-                <p style="font-size:13px;color:var(--text2)">Нажмите чтобы добавить фото</p>
-                <span style="font-size:11px;color:var(--text3)">PNG, JPG до 5MB</span>
-              </div>
-              <input type="file" id="prod-photos" multiple accept="image/*" class="hidden" onchange="previewProdPhotos(this)">
-              <div class="uploaded-photos" id="uploaded-photos"></div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Название товара *</label>
-              <input class="form-input" id="prod-name" placeholder="Введите название товара" oninput="updatePreview()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Описание</label>
-              <textarea class="form-input" id="prod-desc" placeholder="Подробное описание..."></textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Игра *</label>
-              <select class="form-input form-select" id="prod-game">
-                <option value="">Выберите игру</option>
-                <option>Brawl Stars</option><option>Roblox</option><option>CS2</option>
-                <option>Valorant</option><option>Standoff 2</option><option>Minecraft</option>
-                <option>Fortnite</option><option>PUBG Mobile</option><option>Genshin Impact</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Категория *</label>
-              <select class="form-input form-select" id="prod-cat">
-                <option value="">Выберите категорию</option>
-                <option>Аккаунты</option><option>Валюта</option><option>Предметы</option>
-                <option>Скины</option><option>Услуги</option><option>Пасс</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Цена (₽) *</label>
-              <input class="form-input" id="prod-price" type="number" placeholder="0" min="1" oninput="updatePreview()">
-            </div>
-            <div id="boost-section" class="hidden">
-              <div class="ticket-info">
-                <div><div style="font-weight:700">Улучшение товара</div><div style="font-size:12px;color:var(--text2)">Потратьте билеты</div></div>
-                <div class="ticket-badge">🎟️ <span id="user-tickets-count">0</span></div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Выберите буст (необязательно)</label>
-                <div class="boost-selector">
-                  <div class="boost-option" onclick="selectBoost(this,'top')"><div class="boost-icon">🚀</div><div class="boost-name">Топ</div><div class="boost-desc">1 билет</div></div>
-                  <div class="boost-option" onclick="selectBoost(this,'hot')"><div class="boost-icon">🔥</div><div class="boost-name">Горячее</div><div class="boost-desc">2 билета</div></div>
-                  <div class="boost-option" onclick="selectBoost(this,'featured')"><div class="boost-icon">⭐</div><div class="boost-name">Рекомендуем</div><div class="boost-desc">3 билета</div></div>
-                  <div class="boost-option" onclick="selectBoost(this,'new')"><div class="boost-icon">✨</div><div class="boost-name">Новинка</div><div class="boost-desc">1 билет</div></div>
-                  <div class="boost-option" onclick="selectBoost(this,'sale')"><div class="boost-icon">💥</div><div class="boost-name">Акция</div><div class="boost-desc">2 билета</div></div>
-                  <div class="boost-option" onclick="selectBoost(this,'none')"><div class="boost-icon">🚫</div><div class="boost-name">Без буста</div><div class="boost-desc">0 билетов</div></div>
-                </div>
-              </div>
-            </div>
-            <button class="btn-primary w-full" onclick="createProduct()" style="padding:12px;font-size:15px">Создать товар</button>
-          </div>
-          <div class="create-preview">
-            <h4 style="font-size:15px;font-weight:700;margin-bottom:16px">Предпросмотр</h4>
-            <div class="product-card" style="cursor:default">
-              <div class="product-img" id="prev-img" style="font-size:32px">📦</div>
-              <div class="product-info">
-                <div class="product-name" id="prev-name">Название товара</div>
-                <div class="product-price" id="prev-price">0 ₽</div>
-                <div class="product-seller">👤 <span id="prev-seller">Вы</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- CREATE PRODUCT (protected) -->
+      <div class="page" id="page-create-product"></div>
 
-      <!-- CHATS -->
-      <div class="page" id="page-chats" style="padding:0">
-        <div class="chats-wrap">
-          <div class="chats-sidebar-panel">
-            <div class="chats-header"><h3>Чаты</h3></div>
-            <div class="chats-search"><input type="text" placeholder="Поиск в чатах..." oninput="filterChats(this.value)"></div>
-            <div class="chats-list" id="chats-list"></div>
-          </div>
-          <div class="chat-main-area" id="chat-main">
-            <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text2);height:100%">
-              <div style="font-size:48px">💬</div>
-              <p>Выберите чат</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- CHATS (protected) -->
+      <div class="page" id="page-chats" style="padding:0"></div>
 
-      <!-- NOTIFICATIONS -->
-      <div class="page" id="page-notifications">
-        <h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Уведомления</h2>
-        <div id="notifs-list"><div class="empty-state"><div class="empty-icon">🔔</div><p>Уведомлений пока нет</p></div></div>
-      </div>
+      <!-- NOTIFICATIONS (protected) -->
+      <div class="page" id="page-notifications"></div>
 
-      <!-- PROFILE -->
-      <div class="page" id="page-profile">
-        <div class="profile-header-card">
-          <div style="position:relative;cursor:pointer" onclick="document.getElementById('profile-photo-inp').click()">
-            <div class="profile-avatar" id="profile-avatar">👤</div>
-            <div class="profile-avatar-edit">✏️</div>
-          </div>
-          <input type="file" id="profile-photo-inp" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
-          <div class="profile-main">
-            <div class="profile-name-row">
-              <span class="profile-name" id="profile-name">Загрузка...</span>
-              <span id="profile-badge"></span>
-            </div>
-            <div style="font-size:13px;color:var(--green);margin-bottom:10px">● Онлайн</div>
-            <div class="profile-stats">
-              <div class="profile-stat"><div class="profile-stat-val" id="profile-prods-cnt">0</div><div class="profile-stat-lbl">Товары</div></div>
-              <div class="profile-stat"><div class="profile-stat-val" id="profile-reviews-cnt">0</div><div class="profile-stat-lbl">Отзывы</div></div>
-              <div class="profile-stat"><div class="profile-stat-val" id="profile-rating">—</div><div class="profile-stat-lbl">Рейтинг</div></div>
-            </div>
-            <div class="profile-actions">
-              <button class="btn-share" onclick="shareProfile()">📤 Поделиться</button>
-              <button class="btn-share" onclick="showPage('create-product')">➕ Создать товар</button>
-            </div>
-          </div>
-        </div>
-        <div class="profile-tabs">
-          <div class="profile-tab active" onclick="switchProfileTab('products',this)">Товары</div>
-          <div class="profile-tab" onclick="switchProfileTab('reviews',this)">Отзывы</div>
-          <div class="profile-tab" onclick="switchProfileTab('about',this)">О себе</div>
-        </div>
-        <div id="ptab-products">
-          <div class="products-grid" id="my-products"><div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>Товаров пока нет</p></div></div>
-        </div>
-        <div id="ptab-reviews" class="hidden">
-          <div id="my-reviews"><div class="empty-state"><div class="empty-icon">⭐</div><p>Отзывов пока нет</p></div></div>
-        </div>
-        <div id="ptab-about" class="hidden">
-          <div class="admin-section">
-            <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">⚙️ Настройки</h4>
-            <div class="form-group"><label class="form-label">О себе</label><textarea class="form-input" id="about-text" placeholder="Расскажите о себе..."></textarea></div>
-            <button class="btn-primary" onclick="saveAbout()">Сохранить</button>
-          </div>
-          <div class="admin-section" style="margin-top:16px">
-            <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">📧 Email уведомления</h4>
-            <div class="email-connect-row">
-              <div>
-                <div style="font-size:14px;font-weight:600">Получать уведомления</div>
-                <div style="font-size:12px;color:var(--text2)">На email при событиях</div>
-              </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="email-notif-toggle" onchange="toggleEmailNotif(this.checked)">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
-          <div class="admin-section hidden" id="admin-profile-section" style="margin-top:16px">
-            <h4 style="font-size:16px;font-weight:700;margin-bottom:12px">👑 Администрирование</h4>
-            <button class="btn-primary" onclick="showPage('admin')">Перейти в панель</button>
-          </div>
-          <button class="btn-danger" style="margin-top:16px;width:100%" onclick="doLogout()">🚪 Выйти из аккаунта</button>
-        </div>
-      </div>
+      <!-- PROFILE (protected) -->
+      <div class="page" id="page-profile"></div>
 
       <!-- SUPPORT -->
       <div class="page" id="page-support">
@@ -804,6 +755,7 @@ textarea.form-input{resize:vertical;min-height:90px}
             <div class="admin-nav-item" onclick="switchAdminTab('maintenance',this)">🔧 Тех. перерыв</div>
             <div class="admin-nav-item" onclick="switchAdminTab('mailing',this)">📨 Рассылка</div>
             <div class="admin-nav-item" onclick="switchAdminTab('users',this)">👥 Пользователи</div>
+            <div class="admin-nav-item" onclick="switchAdminTab('testaccount',this)">🤖 Тест аккаунт</div>
             <div class="admin-nav-item" onclick="switchAdminTab('deals',this)">🤝 Сделки</div>
             <div class="admin-nav-item" onclick="switchAdminTab('ads',this)">📢 Реклама</div>
             <div class="admin-nav-item" onclick="switchAdminTab('tickets',this)">🎟️ Билеты</div>
@@ -815,13 +767,12 @@ textarea.form-input{resize:vertical;min-height:90px}
   </div>
 </div>
 
-<!-- Mobile Nav -->
 <nav id="mobile-nav">
   <div class="mobile-nav-item active" onclick="showPage('home');mobileActive(this)"><div class="mn-icon">🏠</div>Главная</div>
   <div class="mobile-nav-item" onclick="showPage('catalog');mobileActive(this)"><div class="mn-icon">🎮</div>Каталог</div>
-  <button class="mobile-nav-fab" onclick="showPage('create-product')">+</button>
-  <div class="mobile-nav-item" onclick="showPage('chats');mobileActive(this)"><div class="mn-icon">💬</div>Чаты</div>
-  <div class="mobile-nav-item" onclick="showPage('profile');mobileActive(this)"><div class="mn-icon">👤</div>Профиль</div>
+  <button class="mobile-nav-fab" onclick="requireAuth('create-product','Создание товаров')">+</button>
+  <div class="mobile-nav-item" onclick="requireAuth('chats','Сообщения');mobileActive(this)"><div class="mn-icon">💬</div>Чаты</div>
+  <div class="mobile-nav-item" onclick="requireAuth('profile','Профиль');mobileActive(this)"><div class="mn-icon">👤</div>Профиль</div>
 </nav>
 
 <div id="notif-container"></div>
@@ -838,9 +789,10 @@ textarea.form-input{resize:vertical;min-height:90px}
 <script>
 // ===== STATE =====
 const S = {
-  user: null, userData: null, isAdmin: false,
+  user: null, userData: null, isAdmin: false, isGuest: false,
   products: [], maintTimer: null, chatListeners: {},
   currentChatId: null, selectedBoost: null,
+  pendingPage: null,
 };
 
 const GAMES = [
@@ -852,15 +804,347 @@ const GAMES = [
 ];
 const GEMOJI = {'Brawl Stars':'⚔️','Roblox':'🟥','Standoff 2':'🔫','CS2':'💣','Valorant':'🎯','Minecraft':'⛏️','Fortnite':'🌩️','PUBG Mobile':'🪖','Genshin Impact':'🌸'};
 
+// ===== PROTECTED PAGES that require auth =====
+const PROTECTED_PAGES = ['purchases','create-product','chats','notifications','profile','reviews-write'];
+
+// ===== REQUIRE AUTH GATE =====
+function requireAuth(page, reason) {
+  if (S.user && !S.isGuest) {
+    // User is logged in — render and show
+    renderProtectedPage(page);
+    showPage(page);
+    return;
+  }
+  // Not logged in — show gate
+  S.pendingPage = page;
+  const reasonMap = {
+    'purchases': 'для просмотра ваших покупок',
+    'create-product': 'чтобы создавать и продавать товары',
+    'chats': 'для общения с продавцами',
+    'notifications': 'для получения уведомлений',
+    'profile': 'для управления вашим профилем',
+    'reviews-write': 'чтобы оставлять отзывы',
+    'Создание товаров': 'чтобы создавать и продавать товары',
+    'Кошелёк': 'для доступа к кошельку',
+    'Сообщения': 'для общения с продавцами',
+    'Уведомления': 'для получения уведомлений',
+    'Профиль': 'для управления профилем',
+    'Просмотр покупок': 'для просмотра ваших покупок',
+    'Написание отзывов': 'чтобы оставлять отзывы',
+  };
+  const reasonText = reasonMap[reason] || reasonMap[page] || 'для доступа к этой функции';
+  document.getElementById('gate-reason').textContent = `Войдите или зарегистрируйтесь ${reasonText}`;
+  document.getElementById('auth-gate').classList.add('active');
+  switchGateTab('login');
+}
+
+function closeAuthGate() {
+  document.getElementById('auth-gate').classList.remove('active');
+  S.pendingPage = null;
+  // Clear gate fields
+  ['gate-email','gate-pass','gate-nick','gate-reg-email','gate-reg-pass','gate-reg-pass2'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('gate-login-err').classList.add('hidden');
+  document.getElementById('gate-reg-err').classList.add('hidden');
+}
+
+function switchGateTab(tab) {
+  document.getElementById('gate-tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('gate-tab-reg').classList.toggle('active', tab==='register');
+  document.getElementById('gate-login-form').classList.toggle('hidden', tab!=='login');
+  document.getElementById('gate-reg-form').classList.toggle('hidden', tab!=='register');
+}
+
+function previewGateAvatar(inp) {
+  const f = inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById('gate-av-preview').src = e.target.result;
+    document.getElementById('gate-av-preview').classList.remove('hidden');
+    document.getElementById('gate-av-ph').classList.add('hidden');
+  };
+  r.readAsDataURL(f);
+}
+
+async function gateLogin() {
+  const emailOrNick = document.getElementById('gate-email').value.trim();
+  const pass = document.getElementById('gate-pass').value;
+  const err = document.getElementById('gate-login-err');
+  err.classList.add('hidden');
+  if (!emailOrNick || !pass) { showFErr(err,'Заполните все поля'); return; }
+  const btn = document.getElementById('gate-login-btn');
+  btn.disabled = true; btn.textContent = 'Вход...';
+  try {
+    let email = emailOrNick;
+    if (!emailOrNick.includes('@')) {
+      const snap = await db.ref('users').get();
+      let found = null;
+      if (snap.exists()) snap.forEach(c => { const u=c.val(); if(u.nickname&&u.nickname.toLowerCase()===emailOrNick.toLowerCase()) found=u; });
+      if (!found) { showFErr(err,'Никнейм не найден'); btn.disabled=false; btn.textContent='Войти'; return; }
+      email = found.email;
+    }
+    await auth.signInWithEmailAndPassword(email, pass);
+    closeAuthGate();
+  } catch(e) {
+    showFErr(err, fbErr(e.code));
+    btn.disabled = false; btn.textContent = 'Войти';
+  }
+}
+
+async function gateRegister() {
+  const nick = document.getElementById('gate-nick').value.trim();
+  const email = document.getElementById('gate-reg-email').value.trim();
+  const pass = document.getElementById('gate-reg-pass').value;
+  const pass2 = document.getElementById('gate-reg-pass2').value;
+  const agree = document.getElementById('gate-agree').checked;
+  const err = document.getElementById('gate-reg-err');
+  err.classList.add('hidden');
+  if (!nick||!email||!pass||!pass2) { showFErr(err,'Заполните все поля'); return; }
+  if (nick.length < 3) { showFErr(err,'Никнейм минимум 3 символа'); return; }
+  if (/\s/.test(nick)) { showFErr(err,'Никнейм без пробелов'); return; }
+  if (pass !== pass2) { showFErr(err,'Пароли не совпадают'); return; }
+  if (pass.length < 6) { showFErr(err,'Пароль минимум 6 символов'); return; }
+  if (!agree) { showFErr(err,'Примите условия использования'); return; }
+  const btn = document.getElementById('gate-reg-btn');
+  btn.disabled = true; btn.textContent = 'Создание...';
+  try {
+    const snap = await db.ref('users').get();
+    if (snap.exists()) {
+      let taken = false;
+      snap.forEach(c => { if(c.val().nickname&&c.val().nickname.toLowerCase()===nick.toLowerCase()) taken=true; });
+      if (taken) { showFErr(err,'Этот никнейм уже занят'); btn.disabled=false; btn.textContent='Зарегистрироваться'; return; }
+    }
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: nick });
+    let avatarUrl = '';
+    const fi = document.getElementById('gate-av-inp');
+    if (fi && fi.files[0]) {
+      try { const ref=storage.ref('avatars/'+cred.user.uid); await ref.put(fi.files[0]); avatarUrl=await ref.getDownloadURL(); } catch(e){}
+    }
+    await db.ref('users/'+cred.user.uid).set({
+      uid:cred.user.uid, nickname:nick, email, avatar:avatarUrl,
+      createdAt:Date.now(), emailNotif:false, tickets:0,
+      badge:null, nameColor:null, isAdmin:false, banned:false,
+      bannedUntil:null, banReason:null, about:'',
+    });
+    closeAuthGate();
+    showNotif('Добро пожаловать в LYNEOK! 🎮','success');
+  } catch(e) {
+    showFErr(err, fbErr(e.code));
+    btn.disabled = false; btn.textContent = 'Зарегистрироваться';
+  }
+}
+
+// ===== GUEST MODE =====
+function enterAsGuest() {
+  S.isGuest = true;
+  document.getElementById('auth-overlay').classList.remove('active');
+  document.getElementById('sb-uname').textContent = 'Гость';
+  document.getElementById('sb-status').textContent = '● Просматриваю';
+  document.getElementById('tb-uname').textContent = 'Войти';
+  document.getElementById('topbar-user-block').innerHTML = `<button class="btn-login-topbar" onclick="showMainAuth()">Войти / Регистрация</button>`;
+  renderGuestBanner();
+  initPublicApp();
+}
+
+function showMainAuth() {
+  document.getElementById('auth-overlay').classList.add('active');
+}
+
+function renderGuestBanner() {
+  const b = document.getElementById('guest-banner-home');
+  if (!b) return;
+  b.innerHTML = `<div class="guest-banner">
+    <div class="guest-banner-icon">👋</div>
+    <div class="guest-banner-text">
+      <h4>Вы смотрите как гость</h4>
+      <p>Войдите или зарегистрируйтесь, чтобы покупать, продавать и общаться</p>
+    </div>
+    <button class="guest-banner-btn" onclick="showMainAuth()">Войти</button>
+  </div>`;
+}
+
+// ===== RENDER PROTECTED PAGES =====
+function renderProtectedPage(page) {
+  const el = document.getElementById('page-'+page);
+  if (!el || el.dataset.rendered === '1') return;
+  el.dataset.rendered = '1';
+
+  if (page === 'purchases') {
+    el.innerHTML = `<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Мои покупки</h2>
+    <div class="empty-state"><div class="empty-icon">🛍️</div><p>Покупок пока нет.<br>Найдите что-нибудь в каталоге!</p></div>`;
+  }
+
+  if (page === 'create-product') {
+    el.innerHTML = `<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Создать товар</h2>
+    <div class="create-layout">
+      <div class="create-form">
+        <div class="form-group">
+          <label class="form-label">Фотографии (до 10)</label>
+          <div class="photo-upload" onclick="document.getElementById('prod-photos').click()">
+            <div style="font-size:32px;color:var(--text3);margin-bottom:8px">📸</div>
+            <p style="font-size:13px;color:var(--text2)">Нажмите чтобы добавить фото</p>
+            <span style="font-size:11px;color:var(--text3)">PNG, JPG до 5MB</span>
+          </div>
+          <input type="file" id="prod-photos" multiple accept="image/*" class="hidden" onchange="previewProdPhotos(this)">
+          <div class="uploaded-photos" id="uploaded-photos"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Название товара *</label><input class="form-input" id="prod-name" placeholder="Введите название товара" oninput="updatePreview()"></div>
+        <div class="form-group"><label class="form-label">Описание</label><textarea class="form-input" id="prod-desc" placeholder="Подробное описание..."></textarea></div>
+        <div class="form-group"><label class="form-label">Игра *</label>
+          <select class="form-input form-select" id="prod-game">
+            <option value="">Выберите игру</option>
+            <option>Brawl Stars</option><option>Roblox</option><option>CS2</option>
+            <option>Valorant</option><option>Standoff 2</option><option>Minecraft</option>
+            <option>Fortnite</option><option>PUBG Mobile</option><option>Genshin Impact</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Категория *</label>
+          <select class="form-input form-select" id="prod-cat">
+            <option value="">Выберите категорию</option>
+            <option>Аккаунты</option><option>Валюта</option><option>Предметы</option>
+            <option>Скины</option><option>Услуги</option><option>Пасс</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Цена (₽) *</label><input class="form-input" id="prod-price" type="number" placeholder="0" min="1" oninput="updatePreview()"></div>
+        <div id="boost-section" class="hidden">
+          <div class="ticket-info">
+            <div><div style="font-weight:700">Улучшение товара</div><div style="font-size:12px;color:var(--text2)">Потратьте билеты</div></div>
+            <div class="ticket-badge">🎟️ <span id="user-tickets-count">0</span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Выберите буст (необязательно)</label>
+            <div class="boost-selector">
+              <div class="boost-option" onclick="selectBoost(this,'top')"><div class="boost-icon">🚀</div><div class="boost-name">Топ</div><div class="boost-desc">1 билет</div></div>
+              <div class="boost-option" onclick="selectBoost(this,'hot')"><div class="boost-icon">🔥</div><div class="boost-name">Горячее</div><div class="boost-desc">2 билета</div></div>
+              <div class="boost-option" onclick="selectBoost(this,'featured')"><div class="boost-icon">⭐</div><div class="boost-name">Рекомендуем</div><div class="boost-desc">3 билета</div></div>
+              <div class="boost-option" onclick="selectBoost(this,'new')"><div class="boost-icon">✨</div><div class="boost-name">Новинка</div><div class="boost-desc">1 билет</div></div>
+              <div class="boost-option" onclick="selectBoost(this,'sale')"><div class="boost-icon">💥</div><div class="boost-name">Акция</div><div class="boost-desc">2 билета</div></div>
+              <div class="boost-option" onclick="selectBoost(this,'none')"><div class="boost-icon">🚫</div><div class="boost-name">Без буста</div><div class="boost-desc">0 билетов</div></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary w-full" onclick="createProduct()" style="padding:12px;font-size:15px">Создать товар</button>
+      </div>
+      <div class="create-preview">
+        <h4 style="font-size:15px;font-weight:700;margin-bottom:16px">Предпросмотр</h4>
+        <div class="product-card" style="cursor:default">
+          <div class="product-img" id="prev-img" style="font-size:32px">📦</div>
+          <div class="product-info">
+            <div class="product-name" id="prev-name">Название товара</div>
+            <div class="product-price" id="prev-price">0 ₽</div>
+            <div class="product-seller">👤 <span id="prev-seller">${S.userData?.nickname||'Вы'}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    if ((S.userData?.tickets||0) > 0) {
+      document.getElementById('boost-section').classList.remove('hidden');
+      document.getElementById('user-tickets-count').textContent = S.userData.tickets;
+    }
+  }
+
+  if (page === 'chats') {
+    el.innerHTML = `<div class="chats-wrap">
+      <div class="chats-sidebar-panel">
+        <div class="chats-header"><h3>Чаты</h3></div>
+        <div class="chats-search"><input type="text" placeholder="Поиск в чатах..." oninput="filterChats(this.value)"></div>
+        <div class="chats-list" id="chats-list"></div>
+      </div>
+      <div class="chat-main-area" id="chat-main">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text2);height:100%">
+          <div style="font-size:48px">💬</div><p>Выберите чат</p>
+        </div>
+      </div>
+    </div>`;
+    loadChats();
+  }
+
+  if (page === 'notifications') {
+    el.innerHTML = `<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Уведомления</h2>
+    <div id="notifs-list"><div class="empty-state"><div class="empty-icon">🔔</div><p>Уведомлений пока нет</p></div></div>`;
+  }
+
+  if (page === 'profile') {
+    const u = S.userData;
+    const av = u?.avatar||'';
+    const nick = u?.nickname||'Пользователь';
+    el.innerHTML = `
+    <div class="profile-header-card">
+      <div style="position:relative;cursor:pointer" onclick="document.getElementById('profile-photo-inp').click()">
+        <div class="profile-avatar" id="profile-avatar">${av?`<img src="${av}">`:(nick.charAt(0).toUpperCase())}</div>
+        <div class="profile-avatar-edit">✏️</div>
+      </div>
+      <input type="file" id="profile-photo-inp" accept="image/*" class="hidden" onchange="uploadProfilePhoto(this)">
+      <div class="profile-main">
+        <div class="profile-name-row">
+          <span class="profile-name${u?.nameColor?' name-'+u.nameColor:''}" id="profile-name">${esc(nick)}</span>
+          <span id="profile-badge">${u?.badge?getBadge(u.badge):''}</span>
+        </div>
+        <div style="font-size:13px;color:var(--green);margin-bottom:10px">● Онлайн</div>
+        <div class="profile-stats">
+          <div class="profile-stat"><div class="profile-stat-val" id="profile-prods-cnt">0</div><div class="profile-stat-lbl">Товары</div></div>
+          <div class="profile-stat"><div class="profile-stat-val" id="profile-reviews-cnt">0</div><div class="profile-stat-lbl">Отзывы</div></div>
+          <div class="profile-stat"><div class="profile-stat-val" id="profile-rating">—</div><div class="profile-stat-lbl">Рейтинг</div></div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-share" onclick="shareProfile()">📤 Поделиться</button>
+          <button class="btn-share" onclick="requireAuth('create-product','Создание товаров')">➕ Создать товар</button>
+        </div>
+      </div>
+    </div>
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="switchProfileTab('products',this)">Товары</div>
+      <div class="profile-tab" onclick="switchProfileTab('reviews',this)">Отзывы</div>
+      <div class="profile-tab" onclick="switchProfileTab('about',this)">О себе</div>
+    </div>
+    <div id="ptab-products">
+      <div class="products-grid" id="my-products"><div class="loader"><div class="spinner"></div></div></div>
+    </div>
+    <div id="ptab-reviews" class="hidden">
+      <div id="my-reviews"><div class="empty-state"><div class="empty-icon">⭐</div><p>Отзывов пока нет</p></div></div>
+    </div>
+    <div id="ptab-about" class="hidden">
+      <div class="admin-section">
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">⚙️ Настройки</h4>
+        <div class="form-group"><label class="form-label">О себе</label><textarea class="form-input" id="about-text" placeholder="Расскажите о себе...">${esc(u?.about||'')}</textarea></div>
+        <button class="btn-primary" onclick="saveAbout()">Сохранить</button>
+      </div>
+      <div class="admin-section" style="margin-top:16px">
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">📧 Email уведомления</h4>
+        <div class="email-connect-row">
+          <div><div style="font-size:14px;font-weight:600">Получать уведомления</div><div style="font-size:12px;color:var(--text2)">На email при событиях</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="email-notif-toggle" ${u?.emailNotif?'checked':''} onchange="toggleEmailNotif(this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      ${S.isAdmin?`<div class="admin-section" style="margin-top:16px">
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:12px">👑 Администрирование</h4>
+        <button class="btn-primary" onclick="showPage('admin')">Перейти в панель</button>
+      </div>`:''}
+      <button class="btn-danger" style="margin-top:16px;width:100%" onclick="doLogout()">🚪 Выйти из аккаунта</button>
+    </div>`;
+    loadMyProducts();
+  }
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   auth.onAuthStateChanged(async user => {
     if (user) {
       S.user = user;
+      S.isGuest = false;
       await loadUser(user.uid);
       document.getElementById('auth-overlay').classList.remove('active');
+      closeAuthGate();
       initApp();
-    } else {
+      // If there was a pending page, go there
+      if (S.pendingPage) {
+        const pg = S.pendingPage; S.pendingPage = null;
+        renderProtectedPage(pg);
+        showPage(pg);
+      }
+    } else if (!S.isGuest) {
       S.user = null; S.userData = null;
       document.getElementById('auth-overlay').classList.add('active');
     }
@@ -875,67 +1159,49 @@ async function loadUser(uid) {
       S.isAdmin = S.userData.isAdmin === true || S.userData.nickname === 'тёмвв куго';
     }
   } catch(e){ console.error(e); }
-  updateUI();
+  updateTopbarUI();
   listenMaint();
   loadSettings();
 }
 
-function updateUI() {
+function updateTopbarUI() {
   const u = S.userData, usr = S.user;
   if (!u || !usr) return;
   const nick = u.nickname || usr.displayName || 'Пользователь';
   const av = u.avatar || '';
 
-  // Sidebar
-  const sb = document.getElementById('sb-avatar');
-  sb.innerHTML = av ? `<img src="${av}">` : nick.charAt(0).toUpperCase();
+  document.getElementById('sb-avatar').innerHTML = av ? `<img src="${av}">` : nick.charAt(0).toUpperCase();
   document.getElementById('sb-uname').textContent = nick;
+  document.getElementById('sb-status').textContent = '● Онлайн';
 
-  // Topbar
-  const tb = document.getElementById('tb-avatar');
-  tb.innerHTML = av ? `<img src="${av}">` : nick.charAt(0).toUpperCase();
+  document.getElementById('tb-avatar').innerHTML = av ? `<img src="${av}">` : nick.charAt(0).toUpperCase();
   document.getElementById('tb-uname').textContent = nick;
 
-  // Profile
-  const pa = document.getElementById('profile-avatar');
-  pa.innerHTML = av ? `<img src="${av}">` : nick.charAt(0).toUpperCase();
-  const pn = document.getElementById('profile-name');
-  pn.textContent = nick;
-  if (u.nameColor) pn.className = 'profile-name name-'+u.nameColor;
-  document.getElementById('profile-badge').innerHTML = u.badge ? getBadge(u.badge) : '';
-
-  // Preview seller
-  const ps = document.getElementById('prev-seller'); if(ps) ps.textContent = nick;
-
-  // Admin
   if (S.isAdmin) {
     document.getElementById('sidebar-admin-btn').classList.remove('hidden');
-    document.getElementById('admin-profile-section').classList.remove('hidden');
   }
-
-  // Tickets
-  if ((u.tickets||0) > 0) {
-    document.getElementById('boost-section').classList.remove('hidden');
-    document.getElementById('user-tickets-count').textContent = u.tickets;
-  }
-
-  if (u.about) document.getElementById('about-text').value = u.about;
-  if (u.emailNotif) document.getElementById('email-notif-toggle').checked = true;
-}
-
-function getBadge(type) {
-  const cls = {blue:'badge-blue',rainbow:'badge-rainbow',neon:'badge-neon',red:'badge-red',admin:'badge-admin',purple:'badge-purple'}[type]||'badge-blue';
-  return `<span class="${cls}">✓</span>`;
 }
 
 function initApp() {
   renderGames();
   listenProducts();
-  loadChats();
+  loadChatsCount();
   listenReviews();
-  loadMyProducts();
   renderAds();
   checkBan();
+  initPublicApp();
+}
+
+function initPublicApp() {
+  renderGames();
+  listenProducts();
+  listenReviews();
+  renderAds();
+}
+
+function getBadge(type) {
+  const cls = {blue:'badge-blue',rainbow:'badge-rainbow',neon:'badge-neon',red:'badge-red',admin:'badge-admin',purple:'badge-purple'}[type]||'badge-blue';
+  return `<span class="${cls}">✓</span>`;
 }
 
 // ===== AUTH =====
@@ -964,29 +1230,21 @@ async function doLogin() {
   const pass = document.getElementById('login-password').value;
   const err = document.getElementById('login-error');
   err.classList.add('hidden');
-
   if (!emailOrNick || !pass) { showFErr(err,'Заполните все поля'); return; }
-
   const btn = document.getElementById('login-btn');
   btn.disabled = true; btn.textContent = 'Вход...';
-
   try {
     let email = emailOrNick;
     if (!emailOrNick.includes('@')) {
-      // Search by nickname
       const snap = await db.ref('users').get();
       if (!snap.exists()) { showFErr(err,'Пользователь не найден'); btn.disabled=false; btn.textContent='Войти'; return; }
       let found = null;
-      snap.forEach(c => {
-        const u = c.val();
-        if (u.nickname && u.nickname.toLowerCase() === emailOrNick.toLowerCase()) found = u;
-      });
+      snap.forEach(c => { const u=c.val(); if(u.nickname&&u.nickname.toLowerCase()===emailOrNick.toLowerCase()) found=u; });
       if (!found) { showFErr(err,'Никнейм не найден'); btn.disabled=false; btn.textContent='Войти'; return; }
       email = found.email;
     }
     await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
-    console.error('Login:', e.code, e.message);
     showFErr(err, fbErr(e.code));
     btn.disabled = false; btn.textContent = 'Войти';
   }
@@ -1000,65 +1258,47 @@ async function doRegister() {
   const agree = document.getElementById('reg-agree').checked;
   const err = document.getElementById('register-error');
   err.classList.add('hidden');
-
   if (!nick||!email||!pass||!pass2) { showFErr(err,'Заполните все поля'); return; }
   if (nick.length < 3) { showFErr(err,'Никнейм минимум 3 символа'); return; }
   if (/\s/.test(nick)) { showFErr(err,'Никнейм не должен содержать пробелы'); return; }
   if (pass !== pass2) { showFErr(err,'Пароли не совпадают'); return; }
   if (pass.length < 6) { showFErr(err,'Пароль минимум 6 символов'); return; }
   if (!agree) { showFErr(err,'Примите условия использования'); return; }
-
   const btn = document.getElementById('register-btn');
   btn.disabled = true; btn.textContent = 'Создание аккаунта...';
-
   try {
-    // Check nickname unique
     const snap = await db.ref('users').get();
     if (snap.exists()) {
       let taken = false;
       snap.forEach(c => { if(c.val().nickname&&c.val().nickname.toLowerCase()===nick.toLowerCase()) taken=true; });
       if (taken) { showFErr(err,'Этот никнейм уже занят'); btn.disabled=false; btn.textContent='Зарегистрироваться'; return; }
     }
-
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: nick });
-
     let avatarUrl = '';
     const fi = document.getElementById('reg-av-inp');
     if (fi.files[0]) {
-      try {
-        const ref = storage.ref('avatars/'+cred.user.uid);
-        await ref.put(fi.files[0]);
-        avatarUrl = await ref.getDownloadURL();
-      } catch(ue){ console.warn('Avatar upload failed',ue); }
+      try { const ref=storage.ref('avatars/'+cred.user.uid); await ref.put(fi.files[0]); avatarUrl=await ref.getDownloadURL(); } catch(ue){}
     }
-
     await db.ref('users/'+cred.user.uid).set({
-      uid: cred.user.uid,
-      nickname: nick,
-      email: email,
-      avatar: avatarUrl,
-      createdAt: Date.now(),
-      emailNotif: false,
-      tickets: 0,
-      badge: null,
-      nameColor: null,
-      isAdmin: false,
-      banned: false,
-      bannedUntil: null,
-      banReason: null,
-      about: '',
+      uid:cred.user.uid, nickname:nick, email, avatar:avatarUrl,
+      createdAt:Date.now(), emailNotif:false, tickets:0,
+      badge:null, nameColor:null, isAdmin:false, banned:false,
+      bannedUntil:null, banReason:null, about:'',
     });
     showNotif('Добро пожаловать в LYNEOK! 🎮','success');
   } catch(e) {
-    console.error('Register:', e.code, e.message);
     showFErr(err, fbErr(e.code));
     btn.disabled = false; btn.textContent = 'Зарегистрироваться';
   }
 }
 
 async function doLogout() {
-  await auth.signOut(); location.reload();
+  await auth.signOut();
+  S.isGuest = false; S.user = null; S.userData = null;
+  // Reset rendered pages
+  document.querySelectorAll('.page').forEach(p => delete p.dataset.rendered);
+  location.reload();
 }
 
 function showFErr(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
@@ -1073,10 +1313,8 @@ function fbErr(code) {
     'auth/invalid-email':'Неверный формат email',
     'auth/weak-password':'Пароль слишком простой (мин. 6 символов)',
     'auth/too-many-requests':'Слишком много попыток. Подождите немного',
-    'auth/network-request-failed':'Ошибка сети. Проверьте интернет-соединение',
-    'auth/operation-not-allowed':'Email/пароль вход отключён в Firebase. Включите в консоли Firebase → Authentication → Sign-in method',
-    'auth/popup-closed-by-user':'Окно входа было закрыто',
-    'auth/cancelled-popup-request':'Запрос был отменён',
+    'auth/network-request-failed':'Ошибка сети',
+    'auth/operation-not-allowed':'Email/пароль вход отключён в Firebase',
     'auth/user-disabled':'Аккаунт заблокирован',
   };
   return m[code] || ('Ошибка: '+code);
@@ -1085,16 +1323,23 @@ function fbErr(code) {
 // ===== NAVIGATION =====
 function showPage(page) {
   if (page==='admin' && !S.isAdmin) { showNotif('Нет доступа','error'); return; }
+
+  // For protected pages, check auth
+  if (PROTECTED_PAGES.includes(page) && (!S.user || S.isGuest)) {
+    requireAuth(page, page);
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById('page-'+page);
   if (pg) { pg.classList.add('active'); }
 
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const map = {home:0,catalog:1,'all-products':2,popular:3,reviews:4,purchases:5,'create-product':6,chats:7,notifications:8,profile:9,support:10,admin:11};
-  const idx = map[page]; if (idx!==undefined) { const items=document.querySelectorAll('.nav-item'); if(items[idx]) items[idx].classList.add('active'); }
+  const idx = map[page];
+  if (idx!==undefined) { const items=document.querySelectorAll('.nav-item'); if(items[idx]) items[idx].classList.add('active'); }
 
   if (page==='admin') switchAdminTab('dashboard',document.querySelector('.admin-nav-item'));
-  if (page==='chats') loadChats();
   document.getElementById('content').scrollTop = 0;
 }
 
@@ -1118,18 +1363,21 @@ function listenProducts() {
 
 function renderHomeProds(prods) {
   const g = document.getElementById('home-products');
+  if (!g) return;
   if (!prods.length) { g.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🛒</div><p>Товаров пока нет.<br>Будьте первым продавцом!</p></div>'; return; }
   g.innerHTML = prods.slice(0,8).map(prodCard).join('');
 }
 
 function renderAllProds(prods) {
   const g = document.getElementById('all-products-grid');
+  if (!g) return;
   if (!prods.length) { g.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🛒</div><p>Товаров пока нет</p></div>'; return; }
   g.innerHTML = prods.map(prodCard).join('');
 }
 
 function renderPopular(prods) {
   const g = document.getElementById('popular-grid');
+  if (!g) return;
   const sorted = [...prods].sort((a,b)=>(b.views||0)-(a.views||0));
   if (!sorted.length) { g.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔥</div><p>Нет товаров</p></div>'; return; }
   g.innerHTML = sorted.map(prodCard).join('');
@@ -1139,18 +1387,15 @@ function updateCatalog(prods) {
   const cnt = {};
   prods.forEach(p => { cnt[p.game]=(cnt[p.game]||0)+1; });
   const list = document.getElementById('catalog-list');
+  if (!list) return;
   list.innerHTML = GAMES.map(g => `
     <div class="catalog-game-row" onclick="filterByGame('${g.n}')">
       <div class="catalog-game-info">
         <div class="catalog-game-icon">${g.e}</div>
-        <div>
-          <div class="catalog-game-name">${g.n}</div>
-          <div class="catalog-game-count">${cnt[g.n]||0} товаров</div>
-        </div>
+        <div><div class="catalog-game-name">${g.n}</div><div class="catalog-game-count">${cnt[g.n]||0} товаров</div></div>
       </div>
       <div style="color:var(--text3);font-size:16px">›</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function prodCard(p) {
@@ -1159,7 +1404,7 @@ function prodCard(p) {
   return `<div class="product-card" onclick="openProduct('${p.id}')">
     <div class="product-img">
       ${hasImg?`<img src="${p.photos[0]}" alt="${esc(p.name)}" loading="lazy">`:`<span style="position:relative;z-index:0">${em}</span>`}
-      <button class="product-fav" onclick="event.stopPropagation();this.classList.toggle('active');this.textContent=this.classList.contains('active')?'♥':'♡'">♡</button>
+      <button class="product-fav" onclick="event.stopPropagation();toggleFav(this)">♡</button>
     </div>
     <div class="product-info">
       <div class="product-name">${esc(p.name)}</div>
@@ -1168,6 +1413,12 @@ function prodCard(p) {
       <div class="product-seller">👤 ${esc(p.seller||'—')} ${p.sellerBadge?getBadge(p.sellerBadge):''}</div>
     </div>
   </div>`;
+}
+
+function toggleFav(btn) {
+  if (!S.user || S.isGuest) { requireAuth('profile','Профиль'); return; }
+  btn.classList.toggle('active');
+  btn.textContent = btn.classList.contains('active') ? '♥' : '♡';
 }
 
 async function openProduct(id) {
@@ -1186,7 +1437,8 @@ async function openProduct(id) {
       🎮 ${esc(p.game||'—')}<br>📁 ${esc(p.category||'—')}<br>👤 ${esc(p.seller||'—')}<br>❤️ ${p.likes||0} · 👁 ${p.views||0}
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn-primary" style="flex:1" onclick="contactSeller('${p.id}','${p.uid||''}')">💬 Написать продавцу</button>
+      <button class="btn-primary" style="flex:1" onclick="${S.user&&!S.isGuest?`contactSeller('${p.id}','${p.uid||''}')`:
+        `closeModal();requireAuth('chats','Сообщения')`}">💬 Написать продавцу</button>
       <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
     </div>
   `);
@@ -1194,20 +1446,16 @@ async function openProduct(id) {
 
 async function contactSeller(pid, sellerUid) {
   closeModal();
-  if (!S.user) return;
+  if (!S.user || S.isGuest) { requireAuth('chats','Сообщения'); return; }
   if (sellerUid === S.user.uid) { showNotif('Это ваш товар','info'); return; }
   const chatId = [S.user.uid, sellerUid].sort().join('_') + '_' + pid.slice(0,6);
   const snap = await db.ref('chats/'+chatId).get();
   if (!snap.exists()) {
     const p = S.products.find(x=>x.id===pid);
-    await db.ref('chats/'+chatId).set({
-      participants: {[S.user.uid]:true,[sellerUid]:true},
-      title: p ? p.name : 'Товар',
-      lastMsg: 'Начало диалога', lastTime: Date.now(), createdAt: Date.now(), productId: pid,
-    });
+    await db.ref('chats/'+chatId).set({ participants:{[S.user.uid]:true,[sellerUid]:true}, title:p?p.name:'Товар', lastMsg:'Начало диалога', lastTime:Date.now(), createdAt:Date.now(), productId:pid });
   }
-  showPage('chats');
-  setTimeout(()=>openChat(chatId),400);
+  requireAuth('chats','Сообщения');
+  setTimeout(()=>openChat(chatId),500);
 }
 
 function filterByGame(name) {
@@ -1228,12 +1476,12 @@ function setFilter(btn, cat) {
 
 // ===== GAMES =====
 function renderGames() {
-  document.getElementById('home-games').innerHTML = GAMES.map(g=>`
+  const el = document.getElementById('home-games'); if (!el) return;
+  el.innerHTML = GAMES.map(g=>`
     <div class="game-card" onclick="filterByGame('${g.n}')">
       <div class="game-card-img">${g.e}</div>
       <div class="game-card-name">${g.n}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 // ===== REVIEWS =====
@@ -1246,39 +1494,36 @@ function listenReviews() {
 }
 
 function renderReviews(revs) {
-  const list = document.getElementById('reviews-list');
+  const list = document.getElementById('reviews-list'); if (!list) return;
   if (!revs.length) {
     list.innerHTML='<div class="empty-state"><div class="empty-icon">⭐</div><p>Отзывов пока нет. Будьте первым!</p></div>';
-    document.getElementById('avg-rating').textContent='—';
-    document.getElementById('avg-stars').textContent='☆☆☆☆☆';
-    document.getElementById('review-count').textContent='0 отзывов';
+    const ar=document.getElementById('avg-rating'); if(ar) ar.textContent='—';
+    const as=document.getElementById('avg-stars'); if(as) as.textContent='☆☆☆☆☆';
+    const rc=document.getElementById('review-count'); if(rc) rc.textContent='0 отзывов';
     return;
   }
   const total = revs.reduce((s,r)=>s+(r.stars||0),0);
   const avg = total/revs.length;
   const cnt = [0,0,0,0,0];
   revs.forEach(r=>{ if(r.stars>=1&&r.stars<=5) cnt[r.stars-1]++; });
-  document.getElementById('avg-rating').textContent = avg.toFixed(1);
-  document.getElementById('avg-stars').textContent = '★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg));
-  document.getElementById('review-count').textContent = `${revs.length} отзывов`;
+  const ar=document.getElementById('avg-rating'); if(ar) ar.textContent=avg.toFixed(1);
+  const as=document.getElementById('avg-stars'); if(as) as.textContent='★'.repeat(Math.round(avg))+'☆'.repeat(5-Math.round(avg));
+  const rc=document.getElementById('review-count'); if(rc) rc.textContent=`${revs.length} отзывов`;
   const mx = Math.max(...cnt,1);
   [1,2,3,4,5].forEach(s=>{const el=document.getElementById('bar'+s);if(el)el.style.width=(cnt[s-1]/mx*100)+'%';});
   list.innerHTML = revs.slice(0,30).map(r=>`
     <div class="review-card">
       <div class="review-header">
         <div class="review-avatar">${r.avatar?`<img src="${r.avatar}">`:(r.user||'?').charAt(0).toUpperCase()}</div>
-        <div>
-          <div style="font-size:14px;font-weight:600">${esc(r.user||'Аноним')}</div>
-          <div class="review-stars">${'★'.repeat(r.stars||0)}${'☆'.repeat(5-(r.stars||0))}</div>
-        </div>
+        <div><div style="font-size:14px;font-weight:600">${esc(r.user||'Аноним')}</div><div class="review-stars">${'★'.repeat(r.stars||0)}${'☆'.repeat(5-(r.stars||0))}</div></div>
         <div class="review-time">${fmtTime(r.createdAt)}</div>
       </div>
       <div class="review-text">${esc(r.text||'')}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function openLeaveReview() {
+  if (!S.user || S.isGuest) { requireAuth('reviews-write','Написание отзывов'); return; }
   openModal('Оставить отзыв',`
     <div class="form-group">
       <label class="form-label">Ваша оценка</label>
@@ -1287,10 +1532,7 @@ function openLeaveReview() {
       </div>
       <input type="hidden" id="star-val" value="0">
     </div>
-    <div class="form-group">
-      <label class="form-label">Текст отзыва</label>
-      <textarea class="form-input" id="rev-text" placeholder="Поделитесь впечатлением..." style="min-height:100px"></textarea>
-    </div>
+    <div class="form-group"><label class="form-label">Текст отзыва</label><textarea class="form-input" id="rev-text" placeholder="Поделитесь впечатлением..." style="min-height:100px"></textarea></div>
     <button class="btn-primary w-full" onclick="submitReview()">Опубликовать отзыв</button>
   `);
 }
@@ -1310,23 +1552,23 @@ async function submitReview() {
 
 // ===== CREATE PRODUCT =====
 function updatePreview() {
-  const n = document.getElementById('prod-name')?.value||'';
-  const p = document.getElementById('prod-price')?.value||'0';
-  document.getElementById('prev-name').textContent = n||'Название товара';
-  document.getElementById('prev-price').textContent = (Number(p)||0).toLocaleString('ru')+' ₽';
+  const n=document.getElementById('prod-name')?.value||'';
+  const p=document.getElementById('prod-price')?.value||'0';
+  const pn=document.getElementById('prev-name'); if(pn) pn.textContent=n||'Название товара';
+  const pp=document.getElementById('prev-price'); if(pp) pp.textContent=(Number(p)||0).toLocaleString('ru')+' ₽';
 }
 
 function previewProdPhotos(inp) {
-  const preview = document.getElementById('uploaded-photos');
+  const preview = document.getElementById('uploaded-photos'); if(!preview) return;
   preview.innerHTML = '';
   const pi = document.getElementById('prev-img');
   Array.from(inp.files).slice(0,10).forEach((f,i)=>{
     const r = new FileReader();
     r.onload = e => {
-      const d = document.createElement('div'); d.className='uploaded-photo';
+      const d=document.createElement('div'); d.className='uploaded-photo';
       d.innerHTML=`<img src="${e.target.result}"><button class="del-photo" onclick="this.parentElement.remove()">✕</button>`;
       preview.appendChild(d);
-      if (i===0) { pi.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`; pi.style.fontSize='0'; }
+      if(i===0&&pi){pi.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`;pi.style.fontSize='0';}
     };
     r.readAsDataURL(f);
   });
@@ -1338,56 +1580,42 @@ function selectBoost(el,type) {
 }
 
 async function createProduct() {
-  const name = document.getElementById('prod-name').value.trim();
-  const desc = document.getElementById('prod-desc').value.trim();
-  const game = document.getElementById('prod-game').value;
-  const cat = document.getElementById('prod-cat').value;
-  const price = parseFloat(document.getElementById('prod-price').value)||0;
-  if (!name) { showNotif('Введите название','error'); return; }
-  if (!game) { showNotif('Выберите игру','error'); return; }
-  if (!cat) { showNotif('Выберите категорию','error'); return; }
-  if (price<=0) { showNotif('Введите цену','error'); return; }
-
-  const photos = [];
-  const fi = document.getElementById('prod-photos');
-  for (let i=0;i<Math.min(fi.files.length,10);i++) {
-    try {
-      const ref = storage.ref('products/'+S.user.uid+'/'+Date.now()+'_'+i);
-      await ref.put(fi.files[i]);
-      photos.push(await ref.getDownloadURL());
-    } catch(e){ console.warn('Photo upload failed',e); }
+  const name=document.getElementById('prod-name')?.value.trim();
+  const desc=document.getElementById('prod-desc')?.value.trim();
+  const game=document.getElementById('prod-game')?.value;
+  const cat=document.getElementById('prod-cat')?.value;
+  const price=parseFloat(document.getElementById('prod-price')?.value)||0;
+  if(!name){showNotif('Введите название','error');return;}
+  if(!game){showNotif('Выберите игру','error');return;}
+  if(!cat){showNotif('Выберите категорию','error');return;}
+  if(price<=0){showNotif('Введите цену','error');return;}
+  const photos=[];
+  const fi=document.getElementById('prod-photos');
+  if(fi&&fi.files){
+    for(let i=0;i<Math.min(fi.files.length,10);i++){
+      try{const ref=storage.ref('products/'+S.user.uid+'/'+Date.now()+'_'+i);await ref.put(fi.files[i]);photos.push(await ref.getDownloadURL());}catch(e){}
+    }
   }
-
-  const u = S.userData;
-  await db.ref('products').push({
-    name, desc, game, category:cat, price, photos,
-    uid: S.user.uid, seller: u?.nickname||'Аноним', sellerBadge: u?.badge||null,
-    boost: S.selectedBoost, views:0, likes:0, createdAt:Date.now(),
-  });
-
+  const u=S.userData;
+  await db.ref('products').push({name,desc,game,category:cat,price,photos,uid:S.user.uid,seller:u?.nickname||'Аноним',sellerBadge:u?.badge||null,boost:S.selectedBoost,views:0,likes:0,createdAt:Date.now()});
   showNotif('Товар создан! 🎉','success');
-  document.getElementById('prod-name').value='';
-  document.getElementById('prod-desc').value='';
-  document.getElementById('prod-game').value='';
-  document.getElementById('prod-cat').value='';
-  document.getElementById('prod-price').value='';
-  document.getElementById('uploaded-photos').innerHTML='';
-  document.getElementById('prev-img').innerHTML='📦'; document.getElementById('prev-img').style.fontSize='32px';
-  S.selectedBoost=null; document.querySelectorAll('.boost-option').forEach(o=>o.classList.remove('selected'));
-  showPage('profile'); loadMyProducts();
-  if (u?.emailNotif&&u?.email) sendEmail(u.email,'Товар создан',`Ваш товар "${name}" размещён на LYNEOK!`);
+  const pgEl = document.getElementById('page-create-product');
+  if(pgEl) delete pgEl.dataset.rendered;
+  requireAuth('profile','Профиль');
+  loadMyProducts();
 }
 
 async function loadMyProducts() {
-  if (!S.user) return;
+  if(!S.user) return;
   try {
-    const snap = await db.ref('products').orderByChild('uid').equalTo(S.user.uid).get();
-    const g = document.getElementById('my-products');
-    if (!snap.exists()) { g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>Товаров пока нет</p></div>'; document.getElementById('profile-prods-cnt').textContent='0'; return; }
-    const prods=[]; snap.forEach(c=>prods.push({id:c.key,...c.val()}));
-    document.getElementById('profile-prods-cnt').textContent=prods.length;
+    const snap=await db.ref('products').orderByChild('uid').equalTo(S.user.uid).get();
+    const g=document.getElementById('my-products');
+    if(!g) return;
+    if(!snap.exists()){g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📦</div><p>Товаров пока нет</p></div>';document.getElementById('profile-prods-cnt')&&(document.getElementById('profile-prods-cnt').textContent='0');return;}
+    const prods=[];snap.forEach(c=>prods.push({id:c.key,...c.val()}));
+    const cnt=document.getElementById('profile-prods-cnt');if(cnt)cnt.textContent=prods.length;
     g.innerHTML=prods.map(prodCard).join('');
-  } catch(e){}
+  }catch(e){}
 }
 
 // ===== PROFILE =====
@@ -1396,22 +1624,26 @@ function switchProfileTab(tab,el) {
   document.getElementById('ptab-products').classList.toggle('hidden',tab!=='products');
   document.getElementById('ptab-reviews').classList.toggle('hidden',tab!=='reviews');
   document.getElementById('ptab-about').classList.toggle('hidden',tab!=='about');
-  if (tab==='products') loadMyProducts();
+  if(tab==='products') loadMyProducts();
 }
 
 async function uploadProfilePhoto(inp) {
-  const f = inp.files[0]; if (!f) return;
+  const f=inp.files[0]; if(!f) return;
   try {
-    const ref = storage.ref('avatars/'+S.user.uid);
+    const ref=storage.ref('avatars/'+S.user.uid);
     await ref.put(f);
-    const url = await ref.getDownloadURL();
+    const url=await ref.getDownloadURL();
     await db.ref('users/'+S.user.uid).update({avatar:url});
-    S.userData.avatar = url; updateUI(); showNotif('Фото обновлено!','success');
-  } catch(e){ showNotif('Ошибка загрузки: '+e.message,'error'); }
+    S.userData.avatar=url; updateTopbarUI();
+    const pa=document.getElementById('profile-avatar');
+    if(pa){pa.innerHTML=`<img src="${url}">`;}
+    showNotif('Фото обновлено!','success');
+  }catch(e){showNotif('Ошибка загрузки: '+e.message,'error');}
 }
 
 async function saveAbout() {
-  await db.ref('users/'+S.user.uid).update({about:document.getElementById('about-text').value});
+  const val=document.getElementById('about-text')?.value;
+  await db.ref('users/'+S.user.uid).update({about:val});
   showNotif('Сохранено!','success');
 }
 
@@ -1421,55 +1653,52 @@ async function toggleEmailNotif(checked) {
 }
 
 function shareProfile() {
-  const url = location.href.split('?')[0]+'?user='+(S.userData?.nickname||'');
-  if (navigator.clipboard) navigator.clipboard.writeText(url);
+  const url=location.href.split('?')[0]+'?user='+(S.userData?.nickname||'');
+  if(navigator.clipboard) navigator.clipboard.writeText(url);
   showNotif('Ссылка скопирована!','success');
 }
 
 // ===== CHATS =====
 function loadChats() {
   if (!S.user) return;
-  const list = document.getElementById('chats-list');
+  const list = document.getElementById('chats-list'); if(!list) return;
   list.innerHTML = `<div class="chat-item" onclick="openNewsChat(this)">
     <div class="chat-av" style="background:var(--blue);color:#fff">📰</div>
-    <div class="chat-info">
-      <div class="chat-name">Lyneok News <span class="verified-icon">✓</span></div>
-      <div class="chat-last">Добро пожаловать!</div>
-    </div>
+    <div class="chat-info"><div class="chat-name">Lyneok News <span class="verified-icon">✓</span></div><div class="chat-last">Добро пожаловать!</div></div>
     <div class="chat-meta"><div class="chat-time">Сейчас</div></div>
   </div>`;
-
   db.ref('chats').orderByChild('participants/'+S.user.uid).equalTo(true).on('value', snap=>{
     const chats=[];
-    if (snap.exists()) snap.forEach(c=>chats.push({id:c.key,...c.val()}));
+    if(snap.exists()) snap.forEach(c=>chats.push({id:c.key,...c.val()}));
     chats.sort((a,b)=>(b.lastTime||0)-(a.lastTime||0));
-    const firstItem = list.firstElementChild?.outerHTML||'';
-    list.innerHTML = firstItem + chats.map(c=>`
+    const firstItem=list.firstElementChild?.outerHTML||'';
+    list.innerHTML=firstItem+chats.map(c=>`
       <div class="chat-item" onclick="openChat('${c.id}')">
         <div class="chat-av">💬<div class="online-dot"></div></div>
-        <div class="chat-info">
-          <div class="chat-name">${esc(c.title||'Диалог')}</div>
-          <div class="chat-last">${esc(c.lastMsg||'Нет сообщений')}</div>
-        </div>
+        <div class="chat-info"><div class="chat-name">${esc(c.title||'Диалог')}</div><div class="chat-last">${esc(c.lastMsg||'Нет сообщений')}</div></div>
         <div class="chat-meta"><div class="chat-time">${fmtTime(c.lastTime)}</div></div>
-      </div>
-    `).join('');
+      </div>`).join('');
   });
+}
+
+function loadChatsCount() {
+  if(!S.user) return;
+  // just init, count would go here
 }
 
 function openNewsChat(el) {
   document.querySelectorAll('.chat-item').forEach(i=>i.classList.remove('active')); el.classList.add('active');
-  const main = document.getElementById('chat-main');
-  main.innerHTML = `<div class="chat-header">
+  const main=document.getElementById('chat-main'); if(!main) return;
+  main.innerHTML=`<div class="chat-header">
     <div class="chat-header-av" style="background:var(--blue);color:#fff">📰</div>
     <div class="chat-header-info"><h4>Lyneok News <span style="color:var(--blue);font-size:12px">✓</span></h4><span>Официальный канал</span></div>
   </div>
   <div class="chat-msgs" id="news-msgs"><div class="news-pinned">📌 Добро пожаловать в LYNEOK — лучший маркетплейс для геймеров!</div></div>`;
   db.ref('news-messages').orderByChild('time').on('value', snap=>{
-    const c = document.getElementById('news-msgs'); if (!c) return;
+    const c=document.getElementById('news-msgs'); if(!c) return;
     const msgs=[]; if(snap.exists()) snap.forEach(x=>msgs.push(x.val()));
-    const pinned = c.firstElementChild?.outerHTML||'';
-    c.innerHTML = pinned + msgs.map(m=>`<div class="msg" style="max-width:80%">
+    const pinned=c.firstElementChild?.outerHTML||'';
+    c.innerHTML=pinned+msgs.map(m=>`<div class="msg" style="max-width:80%">
       <div class="msg-av" style="background:var(--blue);color:#fff">📰</div>
       <div><div class="msg-bubble">${esc(m.text||'')}</div><div class="msg-time">${fmtTime(m.time)}</div></div>
     </div>`).join('');
@@ -1478,10 +1707,10 @@ function openNewsChat(el) {
 }
 
 function openChat(chatId) {
-  S.currentChatId = chatId;
+  S.currentChatId=chatId;
   document.querySelectorAll('.chat-item').forEach(i=>i.classList.remove('active'));
-  const main = document.getElementById('chat-main');
-  main.innerHTML = `<div class="chat-header">
+  const main=document.getElementById('chat-main'); if(!main) return;
+  main.innerHTML=`<div class="chat-header">
     <div class="chat-header-av">💬</div>
     <div class="chat-header-info"><h4>Диалог</h4><span>Онлайн</span></div>
   </div>
@@ -1491,14 +1720,13 @@ function openChat(chatId) {
     <textarea placeholder="Напишите сообщение..." id="chat-inp-${chatId}" onkeydown="chatKey(event,'${chatId}')"></textarea>
     <button class="send-btn" onclick="sendMsg('${chatId}')">➤</button>
   </div>`;
-
-  if (!S.chatListeners[chatId]) {
-    S.chatListeners[chatId] = true;
+  if(!S.chatListeners[chatId]){
+    S.chatListeners[chatId]=true;
     db.ref('chats/'+chatId+'/messages').orderByChild('time').on('value', snap=>{
-      const c = document.getElementById('chat-msgs-'+chatId); if (!c) return;
+      const c=document.getElementById('chat-msgs-'+chatId); if(!c) return;
       const msgs=[]; if(snap.exists()) snap.forEach(x=>msgs.push(x.val()));
-      c.innerHTML = msgs.map(m=>{
-        const mine = m.uid===S.user?.uid;
+      c.innerHTML=msgs.map(m=>{
+        const mine=m.uid===S.user?.uid;
         return `<div class="msg ${mine?'sent':''}">
           ${!mine?`<div class="msg-av">${m.av||'👤'}</div>`:''}
           <div><div class="msg-bubble">${esc(m.text||'')}</div><div class="msg-time">${fmtTime(m.time)}</div></div>
@@ -1510,16 +1738,16 @@ function openChat(chatId) {
 }
 
 async function sendMsg(chatId) {
-  const inp = document.getElementById('chat-inp-'+chatId); if (!inp) return;
-  const text = inp.value.trim(); if (!text) return;
+  const inp=document.getElementById('chat-inp-'+chatId); if(!inp) return;
+  const text=inp.value.trim(); if(!text) return;
   inp.value='';
-  const u = S.userData;
-  await db.ref('chats/'+chatId+'/messages').push({text, uid:S.user.uid, av:u?.nickname?.charAt(0)||'?', time:Date.now()});
-  await db.ref('chats/'+chatId).update({lastMsg:text, lastTime:Date.now()});
+  const u=S.userData;
+  await db.ref('chats/'+chatId+'/messages').push({text,uid:S.user.uid,av:u?.nickname?.charAt(0)||'?',time:Date.now()});
+  await db.ref('chats/'+chatId).update({lastMsg:text,lastTime:Date.now()});
 }
 
-function chatKey(e,chatId) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg(chatId);} }
-function filterChats(q) {
+function chatKey(e,chatId){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg(chatId);}}
+function filterChats(q){
   document.querySelectorAll('.chat-item').forEach(it=>{
     const n=it.querySelector('.chat-name')?.textContent?.toLowerCase()||'';
     it.style.display=n.includes(q.toLowerCase())?'':'none';
@@ -1528,8 +1756,8 @@ function filterChats(q) {
 
 // ===== SEARCH =====
 function handleSearch(q) {
-  if (!q) return;
-  const filtered = S.products.filter(p=>
+  if(!q) return;
+  const filtered=S.products.filter(p=>
     p.name?.toLowerCase().includes(q.toLowerCase())||
     p.game?.toLowerCase().includes(q.toLowerCase())||
     p.seller?.toLowerCase().includes(q.toLowerCase())
@@ -1537,42 +1765,42 @@ function handleSearch(q) {
   document.getElementById('all-products-title').textContent=`Поиск: "${q}"`;
   showPage('all-products');
   const g=document.getElementById('all-products-grid');
-  if (!filtered.length) { g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`; return; }
+  if(!filtered.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>`;return;}
   g.innerHTML=filtered.map(prodCard).join('');
 }
 
 // ===== MAINTENANCE =====
-function listenMaint() {
-  db.ref('maintenance').on('value', snap=>{
+function listenMaint(){
+  db.ref('maintenance').on('value',snap=>{
     const d=snap.val();
     const ov=document.getElementById('maint-overlay');
-    if (d&&d.active) {
+    if(d&&d.active){
       ov.classList.remove('hidden');
       document.getElementById('maint-title').textContent=d.title||'Технический перерыв';
       document.getElementById('maint-desc').textContent=d.desc||'';
-      if (S.isAdmin) document.getElementById('maint-admin-btn').classList.remove('hidden');
+      if(S.isAdmin) document.getElementById('maint-admin-btn').classList.remove('hidden');
       startMaintTimer(d.endTime);
-    } else { ov.classList.add('hidden'); if(S.maintTimer) clearInterval(S.maintTimer); }
+    }else{ov.classList.add('hidden');if(S.maintTimer)clearInterval(S.maintTimer);}
   });
 }
-function startMaintTimer(end) {
-  if (S.maintTimer) clearInterval(S.maintTimer);
-  S.maintTimer = setInterval(()=>{
-    const diff=end-Date.now(); if(diff<=0){clearInterval(S.maintTimer);return;}
+function startMaintTimer(end){
+  if(S.maintTimer)clearInterval(S.maintTimer);
+  S.maintTimer=setInterval(()=>{
+    const diff=end-Date.now();if(diff<=0){clearInterval(S.maintTimer);return;}
     const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
     document.getElementById('maint-h').textContent=String(h).padStart(2,'0');
     document.getElementById('maint-m').textContent=String(m).padStart(2,'0');
     document.getElementById('maint-s').textContent=String(s).padStart(2,'0');
   },1000);
 }
-function disableMaint() { document.getElementById('maint-overlay').classList.add('hidden'); }
+function disableMaint(){document.getElementById('maint-overlay').classList.add('hidden');}
 
 // ===== ADS =====
-async function renderAds() {
-  const c=document.getElementById('ads-container'); if(!c) return;
-  try {
-    const snap=await db.ref('ads').get(); if(!snap.exists()){c.innerHTML='';return;}
-    const ads=[]; snap.forEach(x=>{if(x.val().active)ads.push({id:x.key,...x.val()});});
+async function renderAds(){
+  const c=document.getElementById('ads-container');if(!c)return;
+  try{
+    const snap=await db.ref('ads').get();if(!snap.exists()){c.innerHTML='';return;}
+    const ads=[];snap.forEach(x=>{if(x.val().active)ads.push({id:x.key,...x.val()});});
     c.innerHTML=ads.slice(0,3).map(a=>`<div class="ad-card">
       ${a.imgUrl?`<img src="${a.imgUrl}" style="width:100%;height:160px;object-fit:cover">`:`<div class="ad-card-img">📢</div>`}
       <div class="ad-card-body">
@@ -1584,36 +1812,37 @@ async function renderAds() {
         </div>
       </div>
     </div>`).join('');
-  } catch(e){c.innerHTML='';}
+  }catch(e){c.innerHTML='';}
 }
 
 // ===== SETTINGS =====
-async function loadSettings() {
-  try {
+async function loadSettings(){
+  try{
     const snap=await db.ref('settings').get();
-    if (snap.exists()) {
+    if(snap.exists()){
       const s=snap.val();
       if(s.accentColor){document.documentElement.style.setProperty('--blue',s.accentColor);document.documentElement.style.setProperty('--blue2',s.accentColor);}
-      if(s.siteName) document.getElementById('site-name-el').textContent=s.siteName;
-      if(s.logoIcon) document.getElementById('logo-icon-el').textContent=s.logoIcon;
+      if(s.siteName)document.getElementById('site-name-el').textContent=s.siteName;
+      if(s.logoIcon)document.getElementById('logo-icon-el').textContent=s.logoIcon;
     }
-  } catch(e){}
+  }catch(e){}
 }
 
 // ===== SUPPORT =====
-async function sendSupport() {
+async function sendSupport(){
   const subj=document.getElementById('sup-subject').value.trim();
   const msg=document.getElementById('sup-msg').value.trim();
   if(!subj||!msg){showNotif('Заполните все поля','error');return;}
-  await db.ref('support').push({uid:S.user.uid,nick:S.userData?.nickname,email:S.userData?.email,subj,msg,t:Date.now()});
+  const nick = S.userData?.nickname || (S.user?.email) || 'Гость';
+  await db.ref('support').push({uid:S.user?.uid||'guest',nick,email:S.userData?.email||'',subj,msg,t:Date.now()});
   showNotif('Обращение отправлено!','success');
   document.getElementById('sup-subject').value='';
   document.getElementById('sup-msg').value='';
 }
 
 // ===== BAN =====
-async function checkBan() {
-  if(!S.userData?.banned) return;
+async function checkBan(){
+  if(!S.userData?.banned)return;
   const u=S.userData;
   if(u.bannedUntil&&Date.now()>u.bannedUntil){await db.ref('users/'+S.user.uid).update({banned:false});return;}
   openModal('Аккаунт заблокирован',`<div style="text-align:center;padding:16px">
@@ -1626,14 +1855,15 @@ async function checkBan() {
 }
 
 // ===== ADMIN =====
-function switchAdminTab(tab,el) {
+function switchAdminTab(tab,el){
   document.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.remove('active'));
-  if(el) el.classList.add('active');
-  const ac=document.getElementById('admin-content'); if(!ac) return;
-  ({dashboard:renderAdmDash,design:renderAdmDesign,maintenance:renderAdmMaint,mailing:renderAdmMail,users:renderAdmUsers,deals:renderAdmDeals,ads:renderAdmAds,tickets:renderAdmTickets}[tab]||function(){})(ac);
+  if(el)el.classList.add('active');
+  const ac=document.getElementById('admin-content');if(!ac)return;
+  const fns={dashboard:renderAdmDash,design:renderAdmDesign,maintenance:renderAdmMaint,mailing:renderAdmMail,users:renderAdmUsers,testaccount:renderAdmTestAccount,deals:renderAdmDeals,ads:renderAdmAds,tickets:renderAdmTickets};
+  if(fns[tab])fns[tab](ac);
 }
 
-function renderAdmDash(el) {
+function renderAdmDash(el){
   el.innerHTML=`<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">📊 Панель управления</h2>
   <div class="admin-stats-grid">
     <div class="admin-stat-card"><div class="asc-icon">👥</div><div class="asc-val" id="adm-u">...</div><div class="asc-lbl">Пользователей</div></div>
@@ -1653,8 +1883,8 @@ function renderAdmDash(el) {
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
       <button class="btn-primary" onclick="switchAdminTab('mailing',document.querySelectorAll('.admin-nav-item')[3])">📨 Рассылка</button>
       <button class="btn-secondary" onclick="switchAdminTab('maintenance',document.querySelectorAll('.admin-nav-item')[2])">🔧 Тех. перерыв</button>
-      <button class="btn-secondary" onclick="switchAdminTab('ads',document.querySelectorAll('.admin-nav-item')[6])">📢 Реклама</button>
-      <button class="btn-secondary" onclick="switchAdminTab('tickets',document.querySelectorAll('.admin-nav-item')[7])">🎟️ Билеты</button>
+      <button class="btn-secondary" onclick="switchAdminTab('testaccount',document.querySelectorAll('.admin-nav-item')[5])">🤖 Тест аккаунт</button>
+      <button class="btn-secondary" onclick="switchAdminTab('tickets',document.querySelectorAll('.admin-nav-item')[8])">🎟️ Билеты</button>
     </div>
   </div>`;
   Promise.all([db.ref('users').get(),db.ref('products').get(),db.ref('reviews').get(),db.ref('chats').get()]).then(([u,p,r,c])=>{
@@ -1664,7 +1894,7 @@ function renderAdmDash(el) {
     set('adm-r',r.exists()?Object.keys(r.val()).length:0);
     set('adm-c',c.exists()?Object.keys(c.val()).length:0);
     if(u.exists()){
-      const tb=document.getElementById('adm-users-tb'); if(!tb)return;
+      const tb=document.getElementById('adm-users-tb');if(!tb)return;
       tb.innerHTML=Object.values(u.val()).slice(0,8).map(usr=>`<tr style="cursor:pointer" onclick="openUserPanel('${usr.uid}')">
         <td style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700">${(usr.nickname||'?').charAt(0).toUpperCase()}</div>${esc(usr.nickname||'—')}</td>
         <td style="color:var(--text2)">${esc(usr.email||'—')}</td>
@@ -1674,7 +1904,286 @@ function renderAdmDash(el) {
   });
 }
 
-function renderAdmDesign(el) {
+// ===== ADMIN TEST ACCOUNT =====
+function renderAdmTestAccount(el) {
+  const adjectives = ['Тёмный','Быстрый','Крутой','Дикий','Нео','Призрак','Легенда','Ультра','Макс','Про','Супер','Мега'];
+  const nouns = ['Игрок','Геймер','Воин','Страйк','Мастер','Бот','Тест','Агент','Кодер','Рейдер'];
+  const domains = ['gmail.com','mail.ru','yandex.ru','outlook.com','test.com'];
+  const avatarEmojis = ['🎮','🤖','👾','🦊','🐉','⚡','🔥','💎','🌟','🎯','🛸','🦁'];
+
+  function randNick() {
+    const a = adjectives[Math.floor(Math.random()*adjectives.length)];
+    const n = nouns[Math.floor(Math.random()*nouns.length)];
+    const num = Math.floor(Math.random()*9000)+1000;
+    return (a+n+num).replace(/\s/g,'');
+  }
+  function randPass(len=12) {
+    const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$';
+    return Array.from({length:len},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  }
+  function randEmail(nick) {
+    const dom = domains[Math.floor(Math.random()*domains.length)];
+    return nick.toLowerCase().slice(0,12)+Math.floor(Math.random()*999)+'@'+dom;
+  }
+  function randAvatar() { return avatarEmojis[Math.floor(Math.random()*avatarEmojis.length)]; }
+
+  let currentNick = randNick();
+  let currentPass = randPass();
+  let currentEmail = randEmail(currentNick);
+  let currentAvatar = randAvatar();
+  let testAvatarFile = null;
+  let existingAccounts = [];
+
+  el.innerHTML = `<h2 style="font-size:22px;font-weight:800;margin-bottom:6px">🤖 Тест аккаунт</h2>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Создайте тестовый аккаунт с придуманными данными для проверки функционала</p>
+
+  <div class="admin-section">
+    <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">Параметры аккаунта</h4>
+    
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div id="ta-avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--bg3);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;overflow:hidden;flex-shrink:0" onclick="document.getElementById('ta-photo-inp').click()">
+        ${currentAvatar}
+      </div>
+      <input type="file" id="ta-photo-inp" accept="image/*" class="hidden" onchange="taPreviewPhoto(this)">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Фото профиля</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="document.getElementById('ta-photo-inp').click()">📷 Загрузить</button>
+          <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="taRandAvatar()">🎲 Случайный</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label class="form-label">Никнейм</label>
+        <div style="display:flex;gap:6px">
+          <input class="form-input" id="ta-nick" value="${currentNick}" style="flex:1">
+          <button class="btn-secondary" style="padding:8px 10px;flex-shrink:0" title="Случайный" onclick="taRandNick()">🎲</button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Email (выдуманный)</label>
+        <div style="display:flex;gap:6px">
+          <input class="form-input" id="ta-email" value="${currentEmail}" style="flex:1">
+          <button class="btn-secondary" style="padding:8px 10px;flex-shrink:0" title="Случайный" onclick="taRandEmail()">🎲</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="form-label">Пароль</label>
+      <div style="display:flex;gap:6px">
+        <input class="form-input" id="ta-pass" value="${currentPass}" style="flex:1;font-family:monospace">
+        <button class="btn-secondary" style="padding:8px 10px;flex-shrink:0" onclick="taRandPass()">🎲</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label class="form-label">Значок</label>
+        <select class="form-input form-select" id="ta-badge">
+          <option value="">Нет</option>
+          <option value="blue">🔵 Синяя</option>
+          <option value="rainbow">🌈 Радужная</option>
+          <option value="neon">💚 Неоновая</option>
+          <option value="red">🔴 Красная</option>
+          <option value="admin">🟠 Админская</option>
+          <option value="purple">🟣 Фиолетовая</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Цвет ника</label>
+        <select class="form-input form-select" id="ta-color">
+          <option value="">По умолчанию</option>
+          <option value="blue">🔵 Синий</option>
+          <option value="rainbow">🌈 Радужный</option>
+          <option value="neon">💚 Неоновый</option>
+          <option value="red">🔴 Красный</option>
+          <option value="purple">🟣 Фиолетовый</option>
+          <option value="orange">🟠 Оранжевый</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="form-label">Билеты</label>
+      <input class="form-input" id="ta-tickets" type="number" value="0" min="0">
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="createTestAccount()" style="padding:12px 24px;font-size:15px">🤖 Создать аккаунт</button>
+      <button class="btn-secondary" onclick="taRandAll()">🎲 Всё случайное</button>
+    </div>
+    <div id="ta-result" style="margin-top:16px"></div>
+  </div>
+
+  <div class="admin-section" id="ta-accounts-section">
+    <h4 style="font-size:16px;font-weight:700;margin-bottom:14px">Созданные тест-аккаунты <span id="ta-count" style="font-size:13px;color:var(--text2);font-weight:500"></span></h4>
+    <div id="ta-accounts-list"><div class="loader"><div class="spinner"></div></div></div>
+  </div>`;
+
+  // Helpers exposed to DOM
+  window.taRandNick = () => {
+    const n = randNick();
+    document.getElementById('ta-nick').value = n;
+    const em = document.getElementById('ta-email');
+    if(em) em.value = randEmail(n);
+  };
+  window.taRandEmail = () => { const n=document.getElementById('ta-nick').value||randNick(); document.getElementById('ta-email').value=randEmail(n); };
+  window.taRandPass = () => { document.getElementById('ta-pass').value=randPass(); };
+  window.taRandAvatar = () => {
+    const em = randAvatar();
+    const prev = document.getElementById('ta-avatar-preview');
+    if(prev) { prev.innerHTML=em; window._taAvatarFile=null; }
+  };
+  window.taRandAll = () => {
+    const n=randNick();
+    document.getElementById('ta-nick').value=n;
+    document.getElementById('ta-email').value=randEmail(n);
+    document.getElementById('ta-pass').value=randPass();
+    window.taRandAvatar();
+  };
+  window.taPreviewPhoto = (inp) => {
+    const f=inp.files[0]; if(!f) return;
+    window._taAvatarFile=f;
+    const r=new FileReader();
+    r.onload=e=>{
+      const prev=document.getElementById('ta-avatar-preview');
+      if(prev) prev.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    };
+    r.readAsDataURL(f);
+  };
+
+  loadTestAccounts();
+}
+
+async function loadTestAccounts() {
+  const el = document.getElementById('ta-accounts-list'); if(!el) return;
+  try {
+    const snap = await db.ref('testAccounts').get();
+    if(!snap.exists()){
+      el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">Тест-аккаунтов ещё нет</div>';
+      return;
+    }
+    const accounts=[];snap.forEach(c=>accounts.push({id:c.key,...c.val()}));
+    const cnt=document.getElementById('ta-count');if(cnt)cnt.textContent=`(${accounts.length})`;
+    el.innerHTML=accounts.reverse().map(a=>`
+      <div class="test-acc-card">
+        <div class="test-acc-header">
+          <div class="test-acc-avatar">${a.avatarUrl?`<img src="${a.avatarUrl}">`:(a.nickname||'?')[0]}</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:16px">${esc(a.nickname||'—')} ${a.badge?getBadge(a.badge):''}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">Создан: ${fmtTime(a.createdAt)}</div>
+          </div>
+          <button class="btn-danger" style="padding:6px 12px;font-size:12px" onclick="deleteTestAccount('${a.id}','${esc(a.uid||'')}')">🗑</button>
+        </div>
+        <div class="test-acc-creds">
+          <div class="cred-row"><span class="cred-key">Email</span><span class="cred-val">${esc(a.email||'—')}</span><button class="copy-cred" onclick="copyText('${esc(a.email||'')}',this)">Копировать</button></div>
+          <div class="cred-row"><span class="cred-key">Пароль</span><span class="cred-val">${esc(a.password||'—')}</span><button class="copy-cred" onclick="copyText('${esc(a.password||'')}',this)">Копировать</button></div>
+          <div class="cred-row"><span class="cred-key">Ник</span><span class="cred-val">${esc(a.nickname||'—')}</span><button class="copy-cred" onclick="copyText('${esc(a.nickname||'')}',this)">Копировать</button></div>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML=`<div style="color:var(--red);font-size:13px;padding:10px">Ошибка загрузки: ${e.message}</div>`; }
+}
+
+function copyText(text, btn) {
+  if(navigator.clipboard) navigator.clipboard.writeText(text);
+  const orig=btn.textContent; btn.textContent='✓ Скопировано'; btn.style.background='var(--green)'; btn.style.color='#fff';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='';btn.style.color='';},1500);
+}
+
+async function createTestAccount() {
+  const nick = document.getElementById('ta-nick')?.value.trim();
+  const email = document.getElementById('ta-email')?.value.trim();
+  const pass = document.getElementById('ta-pass')?.value;
+  const badge = document.getElementById('ta-badge')?.value;
+  const nameColor = document.getElementById('ta-color')?.value;
+  const tickets = parseInt(document.getElementById('ta-tickets')?.value)||0;
+  const result = document.getElementById('ta-result');
+
+  if(!nick||!email||!pass){showNotif('Заполните ник, email и пароль','error');return;}
+  if(nick.length<3){showNotif('Никнейм минимум 3 символа','error');return;}
+  if(pass.length<6){showNotif('Пароль минимум 6 символов','error');return;}
+  if(!/\S+@\S+\.\S+/.test(email)){showNotif('Введите корректный email','error');return;}
+
+  if(result) result.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg3);border-radius:var(--radius2);font-size:13px"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div>Создание аккаунта...</div>';
+
+  try {
+    // Check nickname
+    const uSnap=await db.ref('users').get();
+    if(uSnap.exists()){
+      let taken=false;
+      uSnap.forEach(c=>{if(c.val().nickname&&c.val().nickname.toLowerCase()===nick.toLowerCase())taken=true;});
+      if(taken){showNotif('Никнейм уже занят, выберите другой','error');if(result)result.innerHTML='';return;}
+    }
+
+    // Create Firebase Auth user (secondary without signing in)
+    // We use REST API to avoid changing current session
+    const API_KEY = 'AIzaSyAbfPtl2auXZeiFlTBgrw5HUR742SlBM88';
+    const resp = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass,returnSecureToken:true})
+    });
+    const data = await resp.json();
+    if(!resp.ok||data.error){
+      const errMsg = data.error?.message || 'Ошибка создания';
+      if(errMsg.includes('EMAIL_EXISTS')){showNotif('Этот email уже зарегистрирован','error');}
+      else{showNotif('Ошибка: '+errMsg,'error');}
+      if(result)result.innerHTML='';return;
+    }
+    const uid = data.localId;
+
+    // Upload avatar if file
+    let avatarUrl='';
+    if(window._taAvatarFile){
+      try{const ref=storage.ref('avatars/'+uid);await ref.put(window._taAvatarFile);avatarUrl=await ref.getDownloadURL();}catch(e){}
+    }
+
+    // Save user to DB
+    const userData = {
+      uid, nickname:nick, email, avatar:avatarUrl,
+      createdAt:Date.now(), emailNotif:false, tickets,
+      badge:badge||null, nameColor:nameColor||null,
+      isAdmin:false, banned:false, bannedUntil:null, banReason:null, about:'',
+      isTestAccount:true
+    };
+    await db.ref('users/'+uid).set(userData);
+
+    // Save to testAccounts collection
+    await db.ref('testAccounts').push({
+      uid, nickname:nick, email, password:pass,
+      avatarUrl, badge:badge||null, nameColor:nameColor||null,
+      tickets, createdAt:Date.now(), createdBy:S.userData?.nickname||'Admin'
+    });
+
+    if(result) result.innerHTML=`<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius2);padding:14px">
+      <div style="font-weight:700;color:var(--green);margin-bottom:10px">✅ Аккаунт успешно создан!</div>
+      <div class="test-acc-creds">
+        <div class="cred-row"><span class="cred-key">Ник</span><span class="cred-val">${esc(nick)}</span><button class="copy-cred" onclick="copyText('${esc(nick)}',this)">Копировать</button></div>
+        <div class="cred-row"><span class="cred-key">Email</span><span class="cred-val">${esc(email)}</span><button class="copy-cred" onclick="copyText('${esc(email)}',this)">Копировать</button></div>
+        <div class="cred-row"><span class="cred-key">Пароль</span><span class="cred-val">${esc(pass)}</span><button class="copy-cred" onclick="copyText('${esc(pass)}',this)">Копировать</button></div>
+      </div>
+    </div>`;
+
+    showNotif(`Тест аккаунт "${nick}" создан! 🎉`,'success');
+    window._taAvatarFile=null;
+    loadTestAccounts();
+  } catch(e) {
+    showNotif('Ошибка: '+e.message,'error');
+    if(result)result.innerHTML=`<div style="color:var(--red);font-size:13px;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">Ошибка: ${e.message}</div>`;
+  }
+}
+
+async function deleteTestAccount(taId, uid) {
+  if(!confirm('Удалить тест-аккаунт из базы данных LYNEOK? (Auth аккаунт останется в Firebase)')) return;
+  try {
+    await db.ref('testAccounts/'+taId).remove();
+    if(uid) await db.ref('users/'+uid).remove();
+    showNotif('Тест-аккаунт удалён','info');
+    loadTestAccounts();
+  } catch(e) { showNotif('Ошибка удаления: '+e.message,'error'); }
+}
+
+function renderAdmDesign(el){
   const colors=['#3b82f6','#8b5cf6','#ec4899','#22c55e','#f97316','#ef4444','#eab308','#06b6d4'];
   el.innerHTML=`<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">🎨 Дизайн</h2>
   <div class="admin-section">
@@ -1694,7 +2203,7 @@ function renderAdmDesign(el) {
 function setAccent(c){document.documentElement.style.setProperty('--blue',c);db.ref('settings').update({accentColor:c});}
 async function saveDesign(){await db.ref('settings').update({siteName:document.getElementById('sn-inp').value,logoIcon:document.getElementById('li-inp').value});showNotif('Сохранено!','success');}
 
-function renderAdmMaint(el) {
+function renderAdmMaint(el){
   el.innerHTML=`<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">🔧 Технический перерыв</h2>
   <div class="admin-section">
     <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="mt-title" value="Технический перерыв"></div>
@@ -1722,7 +2231,7 @@ async function saveMaint(){
   showNotif('Сохранено!','success');
 }
 
-function renderAdmMail(el) {
+function renderAdmMail(el){
   el.innerHTML=`<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">📨 Рассылка</h2>
   <div class="admin-section">
     <div class="form-group"><label class="form-label">Тема</label><input class="form-input" id="ml-subj" placeholder="Тема сообщения"></div>
@@ -1743,7 +2252,7 @@ async function sendBulkMail(){
   showNotif(`Отправлено ${sent} пользователям!`,'success');
 }
 
-function renderAdmUsers(el) {
+function renderAdmUsers(el){
   el.innerHTML=`<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">👥 Пользователи</h2>
   <div class="admin-section">
     <div class="form-group"><input class="form-input" id="usr-search" placeholder="🔍 Поиск по никнейму..." oninput="loadAdmUsers(this.value)"></div>
@@ -1751,25 +2260,25 @@ function renderAdmUsers(el) {
   </div>`;
   loadAdmUsers('');
 }
-async function loadAdmUsers(q) {
+async function loadAdmUsers(q){
   const list=document.getElementById('adm-users-list');if(!list)return;
   const snap=await db.ref('users').get();
   if(!snap.exists()){list.innerHTML='<div class="empty-state"><p>Пользователей нет</p></div>';return;}
   const users=Object.values(snap.val()).filter(u=>!q||u.nickname?.toLowerCase().includes(q.toLowerCase()));
   list.innerHTML=users.map(u=>`<div class="user-row" onclick="openUserPanel('${u.uid}')">
     <div class="user-row-av">${u.avatar?`<img src="${u.avatar}">`:(u.nickname||'?').charAt(0).toUpperCase()}</div>
-    <div><div style="font-size:14px;font-weight:600">${esc(u.nickname||'—')} ${u.badge?getBadge(u.badge):''}</div><div style="font-size:12px;color:var(--text2)">${esc(u.email||'—')}</div></div>
+    <div><div style="font-size:14px;font-weight:600">${esc(u.nickname||'—')} ${u.badge?getBadge(u.badge):''}${u.isTestAccount?'<span style="font-size:10px;background:rgba(234,179,8,0.15);color:var(--yellow);padding:1px 6px;border-radius:4px;margin-left:4px">ТЕСТ</span>':''}</div><div style="font-size:12px;color:var(--text2)">${esc(u.email||'—')}</div></div>
     <div class="user-row-status"><span class="status-badge ${u.banned?'status-banned':'status-active'}">${u.banned?'Забанен':'Активен'}</span></div>
   </div>`).join('');
 }
 
-function openUserPanel(uid) {
+function openUserPanel(uid){
   db.ref('users/'+uid).get().then(snap=>{
     if(!snap.exists())return;
     const u=snap.val();
-    openModal('Управление: '+u.nickname,`
+    openModal('Управление: '+esc(u.nickname),`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <div style="width:48px;height:48px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700">${(u.nickname||'?').charAt(0)}</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:700;overflow:hidden">${u.avatar?`<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover">`:(u.nickname||'?').charAt(0)}</div>
       <div><div style="font-weight:700">${esc(u.nickname||'—')}</div><div style="font-size:12px;color:var(--text2)">${esc(u.email||'—')}</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
@@ -1817,7 +2326,6 @@ async function banUser(uid){
   const snap=await db.ref('users/'+uid).get();const u=snap.val();
   await db.ref('users/'+uid).update({banned:true,bannedUntil:bt?new Date(bt).getTime():null,banReason:br});
   closeModal();showNotif('Пользователь заблокирован','success');
-  if(u?.email&&u?.emailNotif)sendEmail(u.email,'Аккаунт заблокирован',`Ваш аккаунт заблокирован. Причина: ${br}`);
 }
 
 function renderAdmDeals(el){
@@ -1892,7 +2400,6 @@ async function giveTickets(){
   if(!found){showNotif('Пользователь не найден','error');return;}
   await db.ref('users/'+found.uid).update({tickets:(found.tickets||0)+amt});
   showNotif(`Выдано ${amt} билетов ${nick}!`,'success');
-  if(found.email&&found.emailNotif)sendEmail(found.email,'Получены билеты!',`Вам выдано ${amt} билетов на LYNEOK!`);
 }
 
 // ===== EMAIL =====
@@ -1913,7 +2420,7 @@ document.getElementById('modal-overlay')?.addEventListener('click',e=>{if(e.targ
 // ===== NOTIF =====
 function showNotif(msg,type='info'){
   const icons={success:'✅',error:'❌',info:'ℹ️'};
-  const el=document.createElement('div'); el.className='notif '+type;
+  const el=document.createElement('div');el.className='notif '+type;
   el.innerHTML=`<span class="notif-icon">${icons[type]}</span><span class="notif-text">${msg}</span><button class="notif-close" onclick="this.parentElement.remove()">✕</button>`;
   document.getElementById('notif-container').appendChild(el);
   setTimeout(()=>el.remove(),4000);
